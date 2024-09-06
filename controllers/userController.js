@@ -270,15 +270,15 @@ exports.updateUser = async (req, res) => {
 
     // Trim string fields directly
     const data = {
-      firstName: firstName ? firstName.trim() : '',
-      lastName: lastName ? lastName.trim() : '',
-      phoneNumber: phoneNumber ? phoneNumber.trim() : '',
-      dateOfBirth: dateOfBirth ? dateOfBirth.trim() : '',
-      gender: gender ? gender.trim() : '',
-      fullAddress: fullAddress ? fullAddress.trim() : '',
-      country: country ? country.trim() : '',
-      state: state ? state.trim() : '',
-      landmark: landmark ? landmark.trim() : ''
+      firstName:  firstName.trim(),
+      lastName:  lastName.trim(),
+      phoneNumber:  phoneNumber.trim(),
+      dateOfBirth:  dateOfBirth.trim(),
+      gender:  gender.trim(),
+      fullAddress: fullAddress.trim(),
+      country: country.trim(),
+      state: state.trim(),
+      landmark:  landmark.trim()
     };
 
     // Validate input data

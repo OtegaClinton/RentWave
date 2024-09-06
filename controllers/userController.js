@@ -249,25 +249,75 @@ exports.logIn = async (req, res) => {
 
 
 
+const hasConsecutiveSymbols = (str) => {
+  return /[!@#$%^&*()_+={}\[\]:;"'<>,.?/\\-]{2,}/.test(str);
+};
+
 exports.updateUser = async (req, res) => {
   try {
-    const userId = req.params.id;
-    const { firstName, lastName, phoneNumber } = req.body;
-    const data = { firstName, lastName, phoneNumber };
+    const userId = req.user.id;
+    const {
+      firstName,
+      lastName,
+      phoneNumber,
+      dateOfBirth,
+      gender,
+      fullAddress,
+      country,
+      state,
+      landmark
+    } = req.body;
+
+    // Trim string fields directly
+    const data = {
+      firstName: firstName ? firstName.trim() : '',
+      lastName: lastName ? lastName.trim() : '',
+      phoneNumber: phoneNumber ? phoneNumber.trim() : '',
+      dateOfBirth: dateOfBirth ? dateOfBirth.trim() : '',
+      gender: gender ? gender.trim() : '',
+      fullAddress: fullAddress ? fullAddress.trim() : '',
+      country: country ? country.trim() : '',
+      state: state ? state.trim() : '',
+      landmark: landmark ? landmark.trim() : ''
+    };
 
     // Validate input data
     const errors = [];
 
-    if (!firstName || typeof firstName !== 'string' || !/^[A-Za-z]+$/.test(firstName)) {
-      errors.push('First name is required and can only contain letters.');
+    if (!data.firstName || !/^[A-Za-z]+$/.test(data.firstName) || hasConsecutiveSymbols(data.firstName)) {
+      errors.push('First name is required, can only contain letters, and cannot have consecutive symbols.');
     }
 
-    if (!lastName || typeof lastName !== 'string' || !/^[A-Za-z]+$/.test(lastName)) {
-      errors.push('Last name is required and can only contain letters.');
+    if (!data.lastName || !/^[A-Za-z]+$/.test(data.lastName) || hasConsecutiveSymbols(data.lastName)) {
+      errors.push('Last name is required, can only contain letters, and cannot have consecutive symbols.');
     }
 
-    if (!phoneNumber || typeof phoneNumber !== 'string' || !/^[0-9]{11}$/.test(phoneNumber)) {
+    if (!data.phoneNumber || !/^[0-9]{11}$/.test(data.phoneNumber)) {
       errors.push('Phone number is required and must be exactly 11 digits long.');
+    }
+
+    if (!data.gender || !['Male', 'Female', 'Other'].includes(data.gender)) {
+      errors.push('Gender must be either Male, Female, or Other.');
+    }
+
+    if (!data.dateOfBirth || isNaN(Date.parse(data.dateOfBirth))) {
+      errors.push('Date of Birth must be a valid date.');
+    }
+
+    if (!data.fullAddress || data.fullAddress.length < 5 || hasConsecutiveSymbols(data.fullAddress)) {
+      errors.push('Full address must be a valid string with at least 5 characters and cannot have consecutive symbols.');
+    }
+
+    if (!data.country || data.country.length < 2 || !/^[A-Za-z\s]+$/.test(data.country) || hasConsecutiveSymbols(data.country)) {
+      errors.push('Country must be a valid string with at least 2 characters, only letters and spaces, and cannot have consecutive symbols.');
+    }
+
+    if (!data.state || data.state.length < 2 || !/^[A-Za-z\s]+$/.test(data.state) || hasConsecutiveSymbols(data.state)) {
+      errors.push('State must be a valid string with at least 2 characters, only letters and spaces, and cannot have consecutive symbols.');
+    }
+
+    if (!data.landmark || data.landmark.length < 3 || hasConsecutiveSymbols(data.landmark)) {
+      errors.push('Landmark must be a valid string with at least 3 characters and cannot have consecutive symbols.');
     }
 
     if (errors.length > 0) {
@@ -281,8 +331,8 @@ exports.updateUser = async (req, res) => {
     }
 
     // Check if the new phone number is already in use by another user
-    const phoneNumberExists = await userModel.findOne({ phoneNumber });
-    if (phoneNumberExists) {
+    const phoneNumberExists = await userModel.findOne({ phoneNumber: data.phoneNumber });
+    if (phoneNumberExists ) {
       return res.status(400).json({ message: 'Phone number is already in use by another user.' });
     }
 
@@ -313,6 +363,7 @@ exports.updateUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 
 

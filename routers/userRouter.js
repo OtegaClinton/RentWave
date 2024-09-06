@@ -31,7 +31,7 @@ userRouter.post('/newemail', newEmail);
 userRouter.post('/login', logIn);
 
 // Update user details
-userRouter.put('/update/:id',authenticator, uploader.single('profilePicture'), updateUser);
+userRouter.put('/update',authenticator, uploader.single('profilePicture'), updateUser);
 
 // Update profile picture
 userRouter.post('/updatepicture', authenticator, uploader.single('profilePicture'), uploadProfilePicture);

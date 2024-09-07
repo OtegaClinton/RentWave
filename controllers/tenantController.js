@@ -136,61 +136,85 @@ exports.onboardTenant = async (req, res) => {
 };
 
 
+
+
+
+// Helper function to get the redirect URL based on role
+const getDashboardUrl = (role) => {
+  switch (role) {
+    case 'Admin':
+      return '/admin/dashboard';
+    case 'Landlord':
+      return '/landlord/dashboard';
+    case 'Tenant':
+      return '/tenant/dashboard';
+    default:
+      return '/dashboard'; // Default or unknown role
+  }
+};
+
 exports.tenantLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     // Check if the email and password are provided
     if (!email || !password) {
-      return res.status(400).json({
-        message: "Email and password are required."
-      });
+      return res.status(400).json({ message: 'Email and password are required.' });
     }
 
     // Find the tenant by email
     const tenant = await tenantModel.findOne({ email: email.toLowerCase() });
     if (!tenant) {
-      return res.status(404).json({
-        message: "Tenant not found.Invalid Email or Password."
-      });
+      return res.status(404).json({ message: 'Tenant not found. Invalid email or password.' });
+    }
+
+    // Check if tenant is verified
+    if (!tenant.isVerified) {
+      return res.status(403).json({ message: 'Please verify your email to log in.' });
     }
 
     // Verify the password
     const isPasswordCorrect = await bcrypt.compare(password, tenant.password);
     if (!isPasswordCorrect) {
-      return res.status(400).json({
-        message: "Incorrect password."
-      });
+      return res.status(400).json({ message: 'Incorrect password.' });
     }
 
-    // Generate a JWT token
+    // Generate a JWT token including tenant details
     const token = jwt.sign(
-      { id: tenant._id, email: tenant.email },
+      { id: tenant._id, email: tenant.email, role: tenant.role }, // Include role in payload
       process.env.JWT_SECRET,
-      { expiresIn: '24h' } // Token expires in 24 hour
+      { expiresIn: '24h' } // Token expires in 24 hours
     );
 
-    // Exclude sensitive information
+    // Exclude sensitive information from the response
     const { 
+      password: tenantPassword, 
       isVerified, 
-      __v, updatedAt, 
+      __v, 
+      updatedAt, 
       createdAt, 
       phoneNumber, 
-      password: tenantPassword, ...tenantDetails } = tenant._doc;
+      ...tenantDetails 
+    } = tenant._doc;
 
-    // Respond with success and token
+    // Determine the appropriate redirection URL based on role
+    const redirectUrl = getDashboardUrl(tenant.role);
+
+    // Respond with success, token, and redirection URL
     res.status(200).json({
-      message: "Login successful.",
+      message: 'Login successful.',
       data: tenantDetails,
-      token: token
+      token: token,
+      redirectUrl: redirectUrl
     });
   } catch (error) {
     res.status(500).json({
-      message: "Error logging in.",
+      message: 'Error logging in.',
       error: error.message
     });
   }
 };
+
 
 
 

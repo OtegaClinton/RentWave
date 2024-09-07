@@ -183,6 +183,27 @@ exports.newEmail = async (req, res) => {
 
 
 
+// Helper function to get the redirect URL based on role
+const getDashboardUrl = (role, isAdmin, isSuperAdmin) => {
+  if (isSuperAdmin) {
+    return '/admin/dashboard'; // Redirect Super Admins to the Admin dashboard
+  }
+  
+  if (isAdmin) {
+    return '/admin/dashboard'; // Redirect Admins to the Admin dashboard
+  }
+  
+  switch (role) {
+    case 'Landlord':
+      return '/landlord/dashboard';
+    case 'Tenant':
+      return '/tenant/dashboard';
+    default:
+      return '/dashboard'; // Default or unknown role
+  }
+};
+
+
 exports.logIn = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -192,37 +213,29 @@ exports.logIn = async (req, res) => {
 
     // Check if the user exists
     const user = await userModel.findOne({ email: normalizedEmail });
-
     if (!user) {
-      return res.status(404).json({
-        message: 'Invalid email or password.' // More general error message
-      });
+      return res.status(404).json({ message: 'Invalid email or password.' });
     }
 
     // Check if user is verified
     if (!user.isVerified) {
-      return res.status(403).json({
-        message: 'Please verify your email to log in.'
-      });
+      return res.status(403).json({ message: 'Please verify your email to log in.' });
     }
 
     // Verify the password
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
-
     if (!isPasswordCorrect) {
-      return res.status(400).json({
-        message: 'Invalid email or password.' // More general error message
-      });
+      return res.status(400).json({ message: 'Invalid email or password.' });
     }
 
-    // Generate a JWT token
+    // Generate JWT token including the user role
     const token = jwt.sign(
-      { id: user._id, firstName: user.firstName },
+      { id: user._id, role: user.role, isAdmin: user.isAdmin, isSuperAdmin: user.isSuperAdmin },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' } 
+      { expiresIn: '24h' }
     );
 
-    // Destructure the user object to exclude sensitive fields
+    // Exclude sensitive fields from response
     const {
       password: userPassword,
       isVerified,
@@ -230,22 +243,23 @@ exports.logIn = async (req, res) => {
       createdAt,
       updatedAt,
       __v,
-      isAdmin,
-      isSuperAdmin,
       ...otherDetails
     } = user._doc;
+
+    // Determine the appropriate redirection URL based on role and admin status
+    const redirectUrl = getDashboardUrl(user.role, user.isAdmin, user.isSuperAdmin);
 
     res.status(200).json({
       message: 'Login successful.',
       data: otherDetails,
-      token: token
+      token: token,
+      redirectUrl: redirectUrl
     });
   } catch (error) {
-    res.status(500).json({
-      message: error.message
-    });
+    res.status(500).json({ message: 'An unexpected error occurred. Please try again later.' });
   }
 };
+
 
 
 

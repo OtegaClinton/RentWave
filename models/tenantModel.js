@@ -25,28 +25,28 @@ const tenantSchema = new mongoose.Schema({
   },  
   dateOfBirth: {
     type: Date,
-    required: true // Tenant's date of birth
+    required: false // Tenant's date of birth
   },
   gender: {
     type: String,
     enum: ['Male', 'Female', 'Other'],
-    required: true // Tenant's gender with predefined options
+    required: false // Tenant's gender with predefined options
   },
   fullAddress: {
     type: String,
-    required: true // Full address of the tenant
+    required: false // Full address of the tenant
   },
   country: {
     type: String,
-    required: true // Country of residence
+    required: false // Country of residence
   },
   state: {
     type: String,
-    required: true // State of residence
+    required: false // State of residence
   },
   landmark: {
     type: String,
-    required: true // Nearby landmark for better address clarity
+    required: false // Nearby landmark for better address clarity
   },    
   isVerified: { 
     type: Boolean, 

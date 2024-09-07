@@ -113,8 +113,8 @@ exports.createProperty = async (req, res) => {
       amenities: amenities ? amenities.split(',').map(item => item.trim()) : [],
       description,
       images: imageDetails,
-      listedBy: landlord._id,
-      tenant: tenant._id
+      listedBy: landlord._id
+      
     });
 
     await newProperty.save();

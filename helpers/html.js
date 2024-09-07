@@ -4,7 +4,7 @@ const html = (verifyLink,firstName)=>{
     <html>
     <head>
         <meta charset="UTF-8">
-        <title>Welcome to BoamtNest</title>
+        <title>Welcome to RentWave</title>
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -224,86 +224,6 @@ const reverifyHtml = (reverifyLink, firstName) => {
 </html>
 `};
  
- 
-
-
-// exports.propertyNotificationhtml = (propertyName, propertyLocation, listedBy, propertyUrl) => {
-//     return `
-//     <!DOCTYPE html>
-//     <html lang="en">
-//     <head>
-//         <meta charset="UTF-8">
-//         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-//         <title>Property Update Notification</title>
-//         <style>
-//             body {
-//                 font-family: Arial, sans-serif;
-//                 line-height: 1.6;
-//                 background-color: #f4f4f4;
-//                 margin: 0;
-//                 padding: 0;
-//             }
-//             .container {
-//                 width: 100%;
-//                 max-width: 600px;
-//                 margin: 20px auto;
-//                 background-color: #ffffff;
-//                 padding: 20px;
-//                 box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-//             }
-//             .header {
-//                 background-color: #4CAF50;
-//                 color: #ffffff;
-//                 text-align: center;
-//                 padding: 10px 0;
-//             }
-//             .content {
-//                 margin: 20px 0;
-//             }
-//             .property-details {
-//                 margin: 10px 0;
-//             }
-//             .footer {
-//                 text-align: center;
-//                 margin-top: 20px;
-//                 font-size: 12px;
-//                 color: #777777;
-//             }
-//             .btn {
-//                 display: inline-block;
-//                 padding: 10px 20px;
-//                 margin-top: 20px;
-//                 background-color: #4CAF50;
-//                 color: #ffffff;
-//                 text-decoration: none;
-//                 border-radius: 5px;
-//             }
-//         </style>
-//     </head>
-//     <body>
-//         <div class="container">
-//             <div class="header">
-//                 <h1>Property Update Notification</h1>
-//             </div>
-//             <div class="content">
-//                 <p>Dear Admin,</p>
-//                 <p>We would like to inform you that the following property has been marked as sold or rented:</p>
-//                 <div class="property-details">
-//                     <p><strong>Property Name:</strong> ${propertyName}</p>
-//                     <p><strong>Location:</strong> ${propertyLocation}</p>
-//                     <p><strong>Listed By:</strong> ${listedBy}</p>
-//                 </div>
-//                 <p>For more details, please visit the property page.</p>
-//                 <a href="${propertyUrl}" class="btn">View Property</a>
-//             </div>
-//             <div class="footer">
-//                 <p>&copy; 2024 PrimeNest. All rights reserved.</p>
-//             </div>
-//         </div>
-//     </body>
-//     </html>`;
-// };
-
 
 
  

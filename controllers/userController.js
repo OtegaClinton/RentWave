@@ -36,9 +36,9 @@ exports.signUp = async (req, res) => {
     const newUser = new userModel({
       firstName:firstName.trim(),
       lastName:lastName.trim(),
-      email: email.toLowerCase(),
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
-      phoneNumber,
+      phoneNumber:phoneNumber.trim()
       // Exclude confirmPassword from the user model as it is not needed in the database
     });
 

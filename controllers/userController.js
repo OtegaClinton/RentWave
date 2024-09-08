@@ -10,7 +10,6 @@ const cloudinary = require("../helpers/cloudinary");
 
 
 
-
 exports.signUp = async (req, res) => {
   try {
     const { firstName, lastName, email, password, confirmPassword, phoneNumber } = req.body;
@@ -24,8 +23,14 @@ exports.signUp = async (req, res) => {
     const existingUser = await userModel.findOne({
       $or: [{ email }, { phoneNumber }]
     });
+
     if (existingUser) {
-      return res.status(400).json({ message: 'Email or phone number already exists' });
+      if (existingUser.email === email) {
+        return res.status(400).json({ message: 'Email already exists' });
+      }
+      if (existingUser.phoneNumber === phoneNumber) {
+        return res.status(400).json({ message: 'Phone number already exists' });
+      }
     }
 
     // Hash the password
@@ -34,11 +39,11 @@ exports.signUp = async (req, res) => {
 
     // Create a new user
     const newUser = new userModel({
-      firstName:firstName.trim(),
-      lastName:lastName.trim(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
       email: email.toLowerCase().trim(),
       password: hashedPassword,
-      phoneNumber:phoneNumber.trim()
+      phoneNumber: phoneNumber.trim()
       // Exclude confirmPassword from the user model as it is not needed in the database
     });
 
@@ -57,13 +62,13 @@ exports.signUp = async (req, res) => {
 
     // Send verification email
     await sendMail({
-      subject: 'Kindly verify your mail.',
+      subject: 'Kindly verify your email.',
       email: newUser.email,
       html: html(verifyLink, newUser.firstName)
     });
 
     res.status(201).json({
-      message: `Welcome ${newUser.firstName}, kindly check your email to access the link to verify your email.`,
+      message: `Welcome ${newUser.firstName}, kindly check your email to verify your email address.`,
       data: {
         id: newUser._id,
         firstName: newUser.firstName,
@@ -72,8 +77,18 @@ exports.signUp = async (req, res) => {
       }
     });
   } catch (error) {
+    if (error.code === 11000) {
+      // Handle duplicate key errors
+      const field = Object.keys(error.keyValue)[0]; // Get the field that caused the error
+      const value = Object.values(error.keyValue)[0]; // Get the value of the field
+
+      return res.status(400).json({
+        message: `Duplicate key error: ${field} '${value}' already exists.`
+      });
+    }
+
     res.status(500).json({
-      message: error.message
+      message: 'An unexpected error occurred. Please try again later.'
     });
   }
 };

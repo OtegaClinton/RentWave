@@ -3,11 +3,11 @@ const userModel = require("../models/userModel");
 const tenantModel = require("../models/tenantModel"); 
 const cloudinary = require("../helpers/cloudinary");
 const mongoose = require('mongoose');
+const fileSystem = require("fs");
 
 
 exports.createProperty = async (req, res) => {
   try {
-    
     const userId = req.user.id;
 
     const landlord = await userModel.findById(userId);
@@ -28,8 +28,6 @@ exports.createProperty = async (req, res) => {
 
     const imageFiles = req.files || [];
     const imageDetails = [];
-
-  
 
     // Validation regex patterns
     const consecutiveSymbolsRegex = /([!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{2,})/;
@@ -95,8 +93,13 @@ exports.createProperty = async (req, res) => {
           pictureId: result.public_id,
           pictureUrl: result.secure_url
         }))
-        .catch(uploadError => {
-          throw new Error(`Error uploading image: ${uploadError.message}`);
+        .finally(() => {
+          // Remove the uploaded file from local storage after each upload
+          fileSystem.unlink(file.path, (error) => {
+            if (error) {
+              console.error("Error deleting file from server:", error.message);
+            }
+          });
         })
     );
 
@@ -114,7 +117,6 @@ exports.createProperty = async (req, res) => {
       description,
       images: imageDetails,
       listedBy: landlord._id
-      
     });
 
     await newProperty.save();
@@ -136,7 +138,6 @@ exports.createProperty = async (req, res) => {
 
 
 
-  
   // Get a single property by ID
   
   // Helper function to filter sensitive landlord details
@@ -235,127 +236,135 @@ exports.createProperty = async (req, res) => {
   };
   
 
-
   exports.updateProperty = async (req, res) => {
     try {
-        // Validate ID
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({ message: 'Invalid property ID' });
-        }
-
-        // Retrieve the existing property
-        const existingProperty = await propertyModel.findById(req.params.id);
-
-        if (!existingProperty) {
-            return res.status(404).json({ message: 'Property not found' });
-        }
-
-        // Extract data from the request body
-        const {
-            name,
-            location,
-            price,
-            propertyType,
-            bedrooms,
-            bathrooms,
-            amenities,
-            description
-        } = req.body;
-
-        // Initialize an array to hold validation errors
-        const errors = [];
-
-        // Utility function to check for empty strings or symbols only
-        const isInvalidString = (str) => !str || /^\s*$/.test(str) || /^[!@#$%^&*(),.?":{}|<>-_+=]*$/.test(str) || /([!@#$%^&*(),.?":{}|<>-_+=])\1{1,}/.test(str);
-
-        // Validate each field
-        if (name && (typeof name !== 'string' || name.trim().length < 3 || name.trim().length > 100 || isInvalidString(name))) {
-            errors.push('Name must be a valid string between 3 and 100 characters, not empty, and not contain only symbols or consecutive symbols.');
-        }
-
-        if (location && (typeof location !== 'string' || location.trim().length < 3 || location.trim().length > 200 || isInvalidString(location))) {
-            errors.push('Location must be a valid string between 3 and 200 characters, not empty, and not contain only symbols or consecutive symbols.');
-        }
-
-        if (price && (isNaN(price) || price < 0)) {
-            errors.push('Price must be a positive number.');
-        }
-
-        const validPropertyTypes = ['apartment', 'house', 'condo', 'townhouse'];
-        if (propertyType && !validPropertyTypes.includes(propertyType.toLowerCase())) {
-            errors.push(`Property type must be one of the following: ${validPropertyTypes.join(', ')}.`);
-        }
-
-        if (bedrooms && (isNaN(bedrooms) || bedrooms < 1)) {
-            errors.push('Bedrooms must be a number greater than or equal to 1.');
-        }
-
-        if (bathrooms && (isNaN(bathrooms) || bathrooms < 1)) {
-            errors.push('Bathrooms must be a number greater than or equal to 1.');
-        }
-
-        if (amenities && (typeof amenities !== 'string' || amenities.split(',').some(item => isInvalidString(item)))) {
-            errors.push('Amenities must be a comma-separated list of valid, non-empty strings without only symbols.');
-        }
-
-        if (description && (typeof description !== 'string' || description.trim().length > 500 || isInvalidString(description))) {
-            errors.push('Description must be a valid string with a maximum length of 500 characters, not empty, and not contain only symbols or consecutive symbols.');
-        }
-
-        // If any validation errors are found, return a 400 response
-        if (errors.length > 0) {
-            return res.status(400).json({ errors });
-        }
-
-        // Extract image files from the request
-        const imageFiles = req.files;
-        const imageDetails = [];
-
-        // Process new images if any
-        if (imageFiles && imageFiles.length > 0) {
-            for (const file of imageFiles) {
-                const result = await cloudinary.uploader.upload(file.path, {
-                    folder: 'properties'
-                });
-                imageDetails.push({
-                    pictureId: result.public_id,
-                    pictureUrl: result.secure_url
-                });
+      // Validate ID
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ message: 'Invalid property ID' });
+      }
+  
+      // Retrieve the existing property
+      const existingProperty = await propertyModel.findById(req.params.id);
+  
+      if (!existingProperty) {
+        return res.status(404).json({ message: 'Property not found' });
+      }
+  
+      // Extract data from the request body
+      const {
+        name,
+        location,
+        price,
+        propertyType,
+        bedrooms,
+        bathrooms,
+        amenities,
+        description
+      } = req.body;
+  
+      // Initialize an array to hold validation errors
+      const errors = [];
+  
+      // Utility function to check for empty strings or symbols only
+      const isInvalidString = (str) =>
+        !str || /^\s*$/.test(str) || /^[!@#$%^&*(),.?":{}|<>-_+=]*$/.test(str) || /([!@#$%^&*(),.?":{}|<>-_+=])\1{1,}/.test(str);
+  
+      // Validate each field
+      if (name && (typeof name !== 'string' || name.trim().length < 3 || name.trim().length > 100 || isInvalidString(name))) {
+        errors.push('Name must be a valid string between 3 and 100 characters, not empty, and not contain only symbols or consecutive symbols.');
+      }
+  
+      if (location && (typeof location !== 'string' || location.trim().length < 3 || location.trim().length > 200 || isInvalidString(location))) {
+        errors.push('Location must be a valid string between 3 and 200 characters, not empty, and not contain only symbols or consecutive symbols.');
+      }
+  
+      if (price && (isNaN(price) || price < 0)) {
+        errors.push('Price must be a positive number.');
+      }
+  
+      const validPropertyTypes = ['apartment', 'house', 'condo', 'townhouse'];
+      if (propertyType && !validPropertyTypes.includes(propertyType.toLowerCase())) {
+        errors.push(`Property type must be one of the following: ${validPropertyTypes.join(', ')}.`);
+      }
+  
+      if (bedrooms && (isNaN(bedrooms) || bedrooms < 1)) {
+        errors.push('Bedrooms must be a number greater than or equal to 1.');
+      }
+  
+      if (bathrooms && (isNaN(bathrooms) || bathrooms < 1)) {
+        errors.push('Bathrooms must be a number greater than or equal to 1.');
+      }
+  
+      if (amenities && (typeof amenities !== 'string' || amenities.split(',').some(item => isInvalidString(item)))) {
+        errors.push('Amenities must be a comma-separated list of valid, non-empty strings without only symbols.');
+      }
+  
+      if (description && (typeof description !== 'string' || description.trim().length > 500 || isInvalidString(description))) {
+        errors.push('Description must be a valid string with a maximum length of 500 characters, not empty, and not contain only symbols or consecutive symbols.');
+      }
+  
+      // If any validation errors are found, return a 400 response
+      if (errors.length > 0) {
+        return res.status(400).json({ errors });
+      }
+  
+      // Extract image files from the request
+      const imageFiles = req.files;
+      const imageDetails = [];
+  
+      // Process new images if any
+      if (imageFiles && imageFiles.length > 0) {
+        for (const file of imageFiles) {
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: 'properties'
+          });
+          imageDetails.push({
+            pictureId: result.public_id,
+            pictureUrl: result.secure_url
+          });
+  
+          // Remove the uploaded file from local storage after successful upload
+          fileSystem.unlink(file.path, (error) => {
+            if (error) {
+              console.error("Error deleting file from server:", error.message);
             }
+          });
         }
-
-        // Prepare updated data
-        const updatedData = {
-            ...(name && { name }),
-            ...(location && { location }),
-            ...(price && { price }),
-            ...(propertyType && { propertyType }),
-            ...(bedrooms && { bedrooms }),
-            ...(bathrooms && { bathrooms }),
-            ...(amenities && { amenities: amenities.split(',').map(item => item.trim()) }),
-            ...(description && { description }),
-            ...(imageDetails.length > 0 && { images: imageDetails })
-        };
-
-        // Update the property with new data
-        const updatedProperty = await propertyModel.findByIdAndUpdate(
-            req.params.id,
-            updatedData,
-            { new: true }
-        ).populate('listedBy', '-isAdmin -isSuperAdmin -password -isVerified -phoneNumber -__v'); // Exclude sensitive fields
-
-        // Send a 200 response with the updated property
-        res.status(200).json({
-            message: 'Property updated successfully',
-            data: updatedProperty
-        });
+      }
+  
+      // Prepare updated data
+      const updatedData = {
+        ...(name && { name }),
+        ...(location && { location }),
+        ...(price && { price }),
+        ...(propertyType && { propertyType }),
+        ...(bedrooms && { bedrooms }),
+        ...(bathrooms && { bathrooms }),
+        ...(amenities && { amenities: amenities.split(',').map(item => item.trim()) }),
+        ...(description && { description }),
+        ...(imageDetails.length > 0 && { images: imageDetails })
+      };
+  
+      // Update the property with new data
+      const updatedProperty = await propertyModel.findByIdAndUpdate(
+        req.params.id,
+        updatedData,
+        { new: true }
+      ).populate('listedBy', '-isAdmin -isSuperAdmin -password -isVerified -phoneNumber -__v'); // Exclude sensitive fields
+  
+      // Send a 200 response with the updated property
+      res.status(200).json({
+        message: 'Property updated successfully',
+        data: updatedProperty
+      });
     } catch (error) {
-        // Handle any errors and send a 400 response
-        res.status(400).json({
-            error: error.message
-        });
+      // Handle any errors and send a 400 response
+      res.status(400).json({
+        error: error.message
+      });
     }
-};
+  };
+  ;
 
 
 

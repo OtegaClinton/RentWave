@@ -7,6 +7,7 @@ const jwt =require("jsonwebtoken");
 const sendMail=require("../helpers/email");
 const {html,reverifyHtml} = require("../helpers/html");
 const cloudinary = require("../helpers/cloudinary");
+const fileSystem = require("fs");
 
 
 
@@ -278,6 +279,7 @@ exports.logIn = async (req, res) => {
 
 
 
+
 const hasConsecutiveSymbols = (str) => {
   return /[!@#$%^&*()_+={}\[\]:;"'<>,.?/\\-]{2,}/.test(str);
 };
@@ -299,15 +301,15 @@ exports.updateUser = async (req, res) => {
 
     // Trim string fields directly
     const data = {
-      firstName:  firstName.trim(),
-      lastName:  lastName.trim(),
-      phoneNumber:  phoneNumber.trim(),
-      dateOfBirth:  dateOfBirth.trim(),
-      gender:  gender.trim(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      phoneNumber: phoneNumber.trim(),
+      dateOfBirth: dateOfBirth.trim(),
+      gender: gender.trim(),
       fullAddress: fullAddress.trim(),
       country: country.trim(),
       state: state.trim(),
-      landmark:  landmark.trim()
+      landmark: landmark.trim()
     };
 
     // Validate input data
@@ -361,7 +363,7 @@ exports.updateUser = async (req, res) => {
 
     // Check if the new phone number is already in use by another user
     const phoneNumberExists = await userModel.findOne({ phoneNumber: data.phoneNumber });
-    if (phoneNumberExists ) {
+    if (phoneNumberExists) {
       return res.status(400).json({ message: 'Phone number is already in use by another user.' });
     }
 
@@ -376,6 +378,13 @@ exports.updateUser = async (req, res) => {
       } catch (err) {
         return res.status(500).json({ message: 'Error uploading to Cloudinary: ' + err.message });
       }
+      
+      // Delete the local file after uploading to Cloudinary
+      fileSystem.unlink(req.file.path, (error) => {
+        if (error) {
+          console.error("Unable to delete local file: ", error);
+        }
+      });
     }
 
     // Update user information
@@ -392,8 +401,6 @@ exports.updateUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-
 
 
 
@@ -449,6 +456,13 @@ exports.uploadProfilePicture = async (req, res) => {
     if (!updatedUser) {
       return res.status(500).json({ message: "Error updating user picture." });
     }
+
+    // Remove the uploaded file from local storage
+    fileSystem.unlink(req.file.path, (error) => {
+      if (error) {
+        console.error("Error deleting file from server:", error.message);
+      }
+    });
 
     // Return success response
     return res.status(200).json({

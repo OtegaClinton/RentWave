@@ -5,6 +5,11 @@ const propertyModel = require("../models/propertyModel");
 const maintenanceModel = require("../models/maintenanceModel")
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const fileSystem = require("fs");
+const sendMail=require("../helpers/email");
+const mongoose = require('mongoose');
+
+
 
 
 const isInvalidString = (str) => {
@@ -53,7 +58,6 @@ exports.onboardTenant = async (req, res) => {
       errors.push('Phone number must be exactly 11 characters long.');
     }
     
-
     if (!propertyId || typeof propertyId !== 'string') {
       errors.push('Property ID is required and must be a string.');
     }
@@ -89,7 +93,9 @@ exports.onboardTenant = async (req, res) => {
     // Check if a tenant with the provided email or phone number already exists
     const existingTenant = await tenantModel.findOne({ $or: [{ email }, { phoneNumber }] });
     if (existingTenant) {
-      return res.status(400).json({ message: 'Tenant with this email or phone number already exists.' });
+      return res.status(400).json({ 
+        message: 'A tenant with this email or phone number already exists. Please use a different email or phone number.' 
+      });
     }
 
     // Hash the password
@@ -122,16 +128,26 @@ exports.onboardTenant = async (req, res) => {
     // Push tenant ID to property's tenants list
     await propertyModel.findByIdAndUpdate(
       propertyId,
-      { $push: { tenant: newTenant._id } },
+      { $push: { tenants: newTenant._id } },
       { new: true }
     );
-
 
     // Return a success response
     res.status(201).json({ message: 'Tenant onboarded successfully.', tenant: newTenant });
   } catch (error) {
-    console.error('Error onboarding tenant:', error);
-    res.status(500).json({ message: 'Internal server error.' });
+    if (error instanceof mongoose.Error.ValidationError) {
+      // Handle validation errors
+      res.status(400).json({ message: 'Validation error.', error: error.errors });
+    } else if (error.code === 11000) {
+      // Handle duplicate key error with a user-friendly message
+      res.status(400).json({ 
+        message: 'A tenant with this email or phone number already exists. Please use a different email or phone number.' 
+      });
+    } else {
+      // Handle general errors
+      console.error('Error onboarding tenant:', error);
+      res.status(500).json({ message: 'Internal server error.', error: error.message });
+    }
   }
 };
 
@@ -299,7 +315,6 @@ exports.updateTenantProfile = async (req, res) => {
     if (email) {
       const existingTenantByEmail = await tenantModel.findOne({
         email: email.toLowerCase()
-        
       });
 
       if (existingTenantByEmail) {
@@ -346,6 +361,14 @@ exports.updateTenantProfile = async (req, res) => {
           pictureId: result.public_id,
           pictureUrl: result.secure_url
         };
+
+        // Remove the uploaded file from local storage after successful upload
+        fileSystem.unlink(req.file.path, (error) => {
+          if (error) {
+            console.error("Error deleting file from server:", error.message);
+          }
+        });
+
       } catch (uploadError) {
         // Handle Cloudinary upload error
         return res.status(400).json({
@@ -382,6 +405,7 @@ exports.updateTenantProfile = async (req, res) => {
 
 
 
+
 exports.addProfilePictureTenant = async (req, res) => {
   try {
     // Get the tenant ID from the authenticated user
@@ -398,6 +422,13 @@ exports.addProfilePictureTenant = async (req, res) => {
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: 'tenant_profile_pictures'
      
+    });
+
+    // Remove the uploaded file from local storage after successful upload
+    fileSystem.unlink(req.file.path, (error) => {
+      if (error) {
+        console.error("Error deleting file from server:", error.message);
+      }
     });
 
     // Find the tenant and update the profile picture details
@@ -450,6 +481,13 @@ exports.updateProfilePicture = async (req, res) => {
     // Upload new profile picture to Cloudinary
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: 'tenant_profile_pictures'
+    });
+
+    // Remove the uploaded file from local storage after successful upload
+    fileSystem.unlink(req.file.path, (error) => {
+      if (error) {
+        console.error("Error deleting file from server:", error.message);
+      }
     });
 
     // Find the tenant and update the profile picture details
@@ -534,10 +572,6 @@ exports.changePassword = async (req, res) => {
 };
 
 
-
-
-
-
 exports.createMaintenanceRequest = async (req, res) => {
   try {
     const tenantId = req.user.id; // Assuming `req.user.id` is set by authentication middleware
@@ -549,7 +583,7 @@ exports.createMaintenanceRequest = async (req, res) => {
     }
 
     // Extract fields from the request body
-    const { requestFor, additionalInfo, availableDates, phoneNumber} = req.body;
+    const { requestFor, additionalInfo, availableDates, phoneNumber } = req.body;
 
     // Validate required fields
     if (!requestFor || typeof requestFor !== 'string' || requestFor.trim().length < 5) {
@@ -572,6 +606,8 @@ exports.createMaintenanceRequest = async (req, res) => {
 
     // Handle picture uploads, if any
     let pictures = [];
+    const uploadedFiles = []; // To keep track of uploaded files for deletion
+
     if (req.files && req.files.length > 0) {
       try {
         for (const file of req.files) {
@@ -582,8 +618,18 @@ exports.createMaintenanceRequest = async (req, res) => {
             pictureId: result.public_id,
             pictureUrl: result.secure_url
           });
+          uploadedFiles.push(file.path); // Track the uploaded file paths
         }
       } catch (uploadError) {
+        // Clean up uploaded files if there's an error
+        uploadedFiles.forEach(filePath => {
+          fileSystem.unlink(filePath, (error) => {
+            if (error) {
+              console.error(`Error deleting file from server: ${filePath}`, error.message);
+            }
+          });
+        });
+
         return res.status(400).json({
           message: "Error uploading pictures.",
           error: uploadError.message
@@ -600,13 +646,48 @@ exports.createMaintenanceRequest = async (req, res) => {
       availableDates,
       phoneNumber,
       pictures
-      
     });
 
     await newMaintenanceRequest.save();
 
+    // Find landlord's email
+    const landlord = await userModel.findById(tenant.landlord);
+    if (!landlord) {
+      return res.status(404).json({ message: 'Landlord not found' });
+    }
+
+    // Check if landlord email exists
+    if (!landlord.email) {
+      return res.status(400).json({ message: 'Landlord does not have a registered email address' });
+    }
+
+    // Compose email content
+    const emailContent = `
+      <p>Dear ${landlord.firstName} ${landlord.lastName},</p>
+      <p>A maintenance request has been submitted for the property you manage.</p>
+      <p><strong>Request Description:</strong> ${requestFor}</p>
+      <p><strong>Additional Information:</strong> ${additionalInfo || 'None'}</p>
+      <p><strong>Available Dates:</strong> ${availableDates.join(', ')}</p>
+      <p><strong>Phone Number:</strong> ${phoneNumber}</p>
+      <p>Please review the request and take appropriate action.</p>
+      <p>Best regards,</p>
+      <p>Your Property Management System,</p>
+      <p>RentWave.</p>
+    `;
+
+    // Log email content for debugging
+    console.log('Sending email to:', landlord.email);
+    console.log('Email content:', emailContent);
+
+    // Send email to landlord
+    await sendMail({
+      to: landlord.email,
+      subject: 'New Maintenance Request Submitted',
+      html: emailContent
+    });
+
     res.status(201).json({
-      message: 'Maintenance request created successfully.',
+      message: 'Maintenance request created successfully and email sent to landlord.',
       maintenanceRequest: newMaintenanceRequest
     });
   } catch (error) {
@@ -616,6 +697,9 @@ exports.createMaintenanceRequest = async (req, res) => {
     });
   }
 };
+
+
+
 
 
 exports.updateMaintenanceStatus = async (req, res) => {

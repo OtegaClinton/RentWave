@@ -10,14 +10,75 @@ const cloudinary = require("../helpers/cloudinary");
 const fileSystem = require("fs");
 
 
-
 exports.signUp = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, confirmPassword, phoneNumber } = req.body;
+    let {
+      firstName = '',
+      lastName = '',
+      email = '',
+      password = '',
+      confirmPassword = '',
+      phoneNumber = ''
+    } = req.body;
 
-    // Validate confirmPassword matches password
+    // Check for undefined or null values
+    if (typeof firstName !== 'string' || typeof lastName !== 'string' || typeof email !== 'string' || typeof password !== 'string' || typeof confirmPassword !== 'string' || typeof phoneNumber !== 'string') {
+      return res.status(400).json({ message: 'Invalid input data' });
+    }
+
+    // Trim and sanitize input
+    firstName = firstName.trim();
+    lastName = lastName.trim();
+    email = email.trim().toLowerCase();
+    phoneNumber = phoneNumber.trim();
+
+    // Log trimmed values for debugging
+    console.log('Trimmed Values:', { firstName, lastName, email, phoneNumber });
+
+    // Define regex patterns
+    const consecutiveSymbolsPattern = /([!@#$%^&*()_+={}\[\]:;"'<>,.?/\\-])\1{2,}/;
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneNumberPattern = /^\d{11}$/;
+    const passwordPattern = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+={}\[\]:;"'<>,.?/\\-]).{6,}$/;
+
+    // Check for consecutive symbols in all inputs
+    if (consecutiveSymbolsPattern.test(firstName)) {
+      return res.status(400).json({ message: 'First name contains consecutive symbols. Please avoid repeating special characters.' });
+    }
+    if (consecutiveSymbolsPattern.test(lastName)) {
+      return res.status(400).json({ message: 'Last name contains consecutive symbols. Please avoid repeating special characters.' });
+    }
+    if (consecutiveSymbolsPattern.test(email)) {
+      return res.status(400).json({ message: 'Email contains consecutive symbols. Please avoid repeating special characters.' });
+    }
+    if (consecutiveSymbolsPattern.test(password)) {
+      return res.status(400).json({ message: 'Password contains consecutive symbols. Please avoid repeating special characters.' });
+    }
+    if (consecutiveSymbolsPattern.test(confirmPassword)) {
+      return res.status(400).json({ message: 'Confirm password contains consecutive symbols. Please avoid repeating special characters.' });
+    }
+    if (consecutiveSymbolsPattern.test(phoneNumber)) {
+      return res.status(400).json({ message: 'Phone number contains consecutive symbols. Please avoid repeating special characters.' });
+    }
+
+    // Validate input
+    if (firstName.length < 3) {
+      return res.status(400).json({ message: 'First name must be at least 3 characters long' });
+    }
+    if (lastName.length < 3) {
+      return res.status(400).json({ message: 'Last name must be at least 3 characters long' });
+    }
+    if (!emailPattern.test(email)) {
+      return res.status(400).json({ message: 'Invalid email address format. Please provide a valid email address.' });
+    }
+    if (!passwordPattern.test(password)) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long, contain at least one uppercase letter, and one special character.' });
+    }
     if (password !== confirmPassword) {
-      return res.status(400).json({ message: 'Passwords do not match' });
+      return res.status(400).json({ message: 'Passwords do not match. Please ensure both password fields match.' });
+    }
+    if (!phoneNumberPattern.test(phoneNumber)) {
+      return res.status(400).json({ message: 'Phone number must be exactly 11 digits long.' });
     }
 
     // Check if the user already exists
@@ -27,10 +88,10 @@ exports.signUp = async (req, res) => {
 
     if (existingUser) {
       if (existingUser.email === email) {
-        return res.status(400).json({ message: 'Email already exists' });
+        return res.status(400).json({ message: 'Email is already in use. Please use a different email address.' });
       }
       if (existingUser.phoneNumber === phoneNumber) {
-        return res.status(400).json({ message: 'Phone number already exists' });
+        return res.status(400).json({ message: 'Phone number is already in use. Please use a different phone number.' });
       }
     }
 
@@ -40,12 +101,11 @@ exports.signUp = async (req, res) => {
 
     // Create a new user
     const newUser = new userModel({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email: email.toLowerCase().trim(),
+      firstName,
+      lastName,
+      email,
       password: hashedPassword,
-      phoneNumber: phoneNumber.trim()
-      // Exclude confirmPassword from the user model as it is not needed in the database
+      phoneNumber
     });
 
     // Save the user to the database
@@ -64,7 +124,7 @@ exports.signUp = async (req, res) => {
     // Send verification email
     await sendMail({
       subject: 'Kindly verify your email.',
-      email: newUser.email,
+      to: newUser.email,
       html: html(verifyLink, newUser.firstName)
     });
 
@@ -78,22 +138,23 @@ exports.signUp = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error during sign-up:', error); // Log the error details
     if (error.code === 11000) {
       // Handle duplicate key errors
       const field = Object.keys(error.keyValue)[0]; // Get the field that caused the error
       const value = Object.values(error.keyValue)[0]; // Get the value of the field
 
       return res.status(400).json({
-        message: `Duplicate key error: ${field} '${value}' already exists.`
+        message: `Duplicate key error: ${field} '${value}' already exists. Please use a different ${field}.`
       });
     }
 
     res.status(500).json({
-      message: 'An unexpected error occurred. Please try again later.'
+      message: 'An unexpected error occurred. Please try again later.',
+      error: error.message 
     });
   }
 };
-
 
 
 
@@ -115,7 +176,7 @@ exports.verifyEmail = async (req, res) => {
         const verifyLink = `${req.protocol}://${req.get('host')}/api/v1/newemail/${findUser._id}`;
         await sendMail({
           subject: 'Kindly Verify your mail',
-          email: findUser.email,
+          to: findUser.email,
           html: html(verifyLink, findUser.firstName)
         });
         return res.status(400).json({
@@ -181,7 +242,7 @@ exports.newEmail = async (req, res) => {
     // Send the email
     await sendMail({
       subject: 'Kindly verify your email',
-      email: user.email,
+      to: user.email,
       html: reverifyHtml(reverifyLink, user.firstName)
     });
 

@@ -19,7 +19,7 @@ const uploader = require("../helpers/multer");
 
 
 // User signup
-userRouter.post('/signup',userValidator, signUp);
+userRouter.post('/signup', signUp);
 
 // Verify email
 userRouter.get('/verify/:id/:token', verifyEmail);

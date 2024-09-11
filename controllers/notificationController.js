@@ -1,6 +1,7 @@
 const paymentModel = require('../models/paymentModel');
 const tenantModel = require('../models/tenantModel');
 const sendMail = require("../helpers/email");
+const mongoose = require('mongoose');
 
 const notifyDueRent = async () => {
   try {
@@ -110,5 +111,63 @@ const dueRentReminder = async () => {
 
 
 
+// Function to generate and send invoices for leases that end today
+const generateAndSendInvoicesForToday = async () => {
+  try {
+    // Get today's date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-module.exports = {notifyDueRent,dueRentReminder};
+    // Find tenants whose lease end date is today
+    const tenants = await tenantModel.find({ leaseEnd: today }).populate('property'); // Populate property to get rent price
+
+    // Loop through the tenants and generate/send invoices
+    for (const tenant of tenants) {
+      const { firstName, lastName, email, property } = tenant;
+      const rentAmount = property.price; // Use the price field from property
+      
+      // Create invoice details
+      const invoice = {
+        tenantName: `${firstName} ${lastName}`,
+        tenantEmail: email,
+        propertyAddress: property.address, // Assuming property has an address field
+        dueDate: tenant.leaseEnd.toDateString(), // Lease end date as due date
+        rentAmount,
+        additionalCharges: 0,
+        totalAmountDue: rentAmount,
+        invoiceDate: today.toDateString(),
+      };
+
+      // Format the invoice message
+      const invoiceMessage = `
+        <p>Dear ${invoice.tenantName},</p>
+        <p>This is your rent invoice for the property at <strong>${invoice.propertyAddress}</strong>:</p>
+        <ul>
+          <li><strong>Invoice Date:</strong> ${invoice.invoiceDate}</li>
+          <li><strong>Due Date:</strong> ${invoice.dueDate}</li>
+          <li><strong>Rent Amount:</strong> $${invoice.rentAmount.toFixed(2)}</li>
+          <li><strong>Additional Charges:</strong> $${invoice.additionalCharges.toFixed(2)}</li>
+          <li><strong>Total Amount Due:</strong> $${invoice.totalAmountDue.toFixed(2)}</li>
+        </ul>
+        <p>Please ensure the payment is made. If you have any questions or concerns, please contact us.</p>
+        <p>Thank you,<br/>RentWave Team</p>
+      `;
+
+      // Send the invoice email
+      await sendMail({
+        to: invoice.tenantEmail,
+        subject: 'Rent Invoice',
+        html: invoiceMessage
+      });
+
+      console.log(`Invoice sent to ${invoice.tenantEmail} successfully.`);
+    }
+  } catch (error) {
+    console.error('Error generating and sending invoices:', error.message);
+  }
+};
+
+
+
+
+module.exports = {notifyDueRent,dueRentReminder, generateAndSendInvoicesForToday};

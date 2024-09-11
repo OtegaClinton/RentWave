@@ -13,9 +13,8 @@ const mongoose = require('mongoose');
 
 
 const isInvalidString = (str) => {
-  // Check if the string contains only allowed characters
-  const hasInvalidChars = /[^a-zA-Z0-9\s]/.test(str);
-  // Check if the string has consecutive symbols or is empty
+  // Allow letters, numbers, spaces, commas, hyphens, and apostrophes, but check for consecutive symbols or empty strings
+  const hasInvalidChars = /[^a-zA-Z0-9\s,'-]/.test(str);
   const hasConsecutiveSymbols = /[\W_]{2,}/.test(str);
   return hasInvalidChars || hasConsecutiveSymbols || str.trim().length === 0;
 };
@@ -25,7 +24,7 @@ exports.onboardTenant = async (req, res) => {
   const errors = [];
 
   try {
-    // Extract the necessary fields from the request body
+    // Extract fields from request body
     const {
       firstName,
       lastName,
@@ -34,16 +33,16 @@ exports.onboardTenant = async (req, res) => {
       phoneNumber,
       propertyId,
       leaseStart,
-      leaseEnd
+      leaseEnd,
     } = req.body;
 
     // Validate each field
     if (!firstName || typeof firstName !== 'string' || firstName.trim().length < 3 || firstName.trim().length > 100 || isInvalidString(firstName)) {
-      errors.push('First name must be a valid string between 3 and 100 characters, not empty, and not contain only symbols or consecutive symbols.');
+      errors.push('First name must be a valid string between 3 and 100 characters, not empty, and should not contain consecutive symbols.');
     }
 
     if (!lastName || typeof lastName !== 'string' || lastName.trim().length < 3 || lastName.trim().length > 100 || isInvalidString(lastName)) {
-      errors.push('Last name must be a valid string between 3 and 100 characters, not empty, and not contain only symbols or consecutive symbols.');
+      errors.push('Last name must be a valid string between 3 and 100 characters, not empty, and should not contain consecutive symbols.');
     }
 
     if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -54,19 +53,22 @@ exports.onboardTenant = async (req, res) => {
       errors.push('Password must be at least 6 characters long.');
     }
 
-    if (!phoneNumber || typeof phoneNumber !== 'string' || phoneNumber.length !== 11) {
-      errors.push('Phone number must be exactly 11 characters long.');
+    if (!phoneNumber || typeof phoneNumber !== 'string' || !/^\d{11}$/.test(phoneNumber)) {
+      errors.push('Phone number must be exactly 11 digits long.');
     }
-    
+
     if (!propertyId || typeof propertyId !== 'string') {
       errors.push('Property ID is required and must be a string.');
     }
 
-    if (!leaseStart || isNaN(new Date(leaseStart).getTime())) {
+    const start = new Date(leaseStart);
+    const end = new Date(leaseEnd);
+
+    if (!leaseStart || isNaN(start.getTime())) {
       errors.push('Lease start date is required and must be a valid date.');
     }
 
-    if (!leaseEnd || isNaN(new Date(leaseEnd).getTime()) || new Date(leaseStart) >= new Date(leaseEnd)) {
+    if (!leaseEnd || isNaN(end.getTime()) || start >= end) {
       errors.push('Lease end date is required and must be a valid date after the lease start date.');
     }
 
@@ -90,16 +92,19 @@ exports.onboardTenant = async (req, res) => {
       return res.status(404).json({ message: 'Property not found.' });
     }
 
-    // Check if the property has a landlord and if it matches the authenticated landlord
-    if (!property.landlord || property.landlord.toString() !== landlordId) {
+    // Check if the property has a listedBy (landlord) and if it matches the authenticated landlord
+    console.log('Authenticated landlord ID:', landlordId);
+    console.log('Property listedBy ID:', property.listedBy.toString());
+    
+    if (!property.listedBy || property.listedBy.toString() !== landlordId.toString()) {
       return res.status(403).json({ message: 'You cannot onboard a tenant to a property that you do not own.' });
     }
 
     // Check if a tenant with the provided email or phone number already exists
     const existingTenant = await tenantModel.findOne({ $or: [{ email }, { phoneNumber }] });
     if (existingTenant) {
-      return res.status(400).json({ 
-        message: 'A tenant with this email or phone number already exists. Please use a different email or phone number.' 
+      return res.status(400).json({
+        message: 'A tenant with this email or phone number already exists. Please use a different email or phone number.',
       });
     }
 
@@ -123,38 +128,26 @@ exports.onboardTenant = async (req, res) => {
     // Save the new tenant to the database
     await newTenant.save();
 
-    // Push tenant ID to landlord's tenants list
-    await userModel.findByIdAndUpdate(
-      landlordId,
-      { $push: { tenants: newTenant._id } },
-      { new: true }
-    );
-
-    // Push tenant ID to property's tenants list
-    await propertyModel.findByIdAndUpdate(
-      propertyId,
-      { $push: { tenants: newTenant._id } },
-      { new: true }
-    );
+    // Update landlord and property records with the new tenant ID
+    await userModel.findByIdAndUpdate(landlordId, { $push: { tenants: newTenant._id } }, { new: true });
+    await propertyModel.findByIdAndUpdate(propertyId, { $push: { tenants: newTenant._id } }, { new: true });
 
     // Return a success response
     res.status(201).json({ message: 'Tenant onboarded successfully.', tenant: newTenant });
   } catch (error) {
     if (error instanceof mongoose.Error.ValidationError) {
-      // Handle validation errors
       res.status(400).json({ message: 'Validation error.', error: error.errors });
     } else if (error.code === 11000) {
-      // Handle duplicate key error with a user-friendly message
-      res.status(400).json({ 
-        message: 'A tenant with this email or phone number already exists. Please use a different email or phone number.' 
+      res.status(400).json({
+        message: 'A tenant with this email or phone number already exists. Please use a different email or phone number.',
       });
     } else {
-      // Handle general errors
       console.error('Error onboarding tenant:', error);
       res.status(500).json({ message: 'Internal server error.', error: error.message });
     }
   }
 };
+
 
 
 

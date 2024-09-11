@@ -49,10 +49,11 @@ exports.createProperty = async (req, res) => {
       errors.push('Price is required and must be a positive number.');
     }
 
-    const validPropertyTypes = ['Apartment', 'House', 'Condo', 'Townhouse'];
+    const validPropertyTypes = ['apartment', 'house', 'condo', 'townhouse']; // Make all types lowercase for comparison
     if (!propertyType || !validPropertyTypes.includes(propertyType.toLowerCase())) {
-      errors.push(`Property type is required and must be one of the following: ${validPropertyTypes.join(', ')}.`);
+    errors.push(`Property type is required and must be one of the following: ${validPropertyTypes.map(type => type.charAt(0).toUpperCase() + type.slice(1)).join(', ')}.`);
     }
+
 
     if (!bedrooms || isNaN(bedrooms) || bedrooms < 1) {
       errors.push('Number of bedrooms is required and must be at least 1.');

@@ -49,7 +49,7 @@ exports.createProperty = async (req, res) => {
       errors.push('Price is required and must be a positive number.');
     }
 
-    const validPropertyTypes = ['apartment', 'house', 'condo', 'townhouse'];
+    const validPropertyTypes = ['Apartment', 'House', 'Condo', 'Townhouse'];
     if (!propertyType || !validPropertyTypes.includes(propertyType.toLowerCase())) {
       errors.push(`Property type is required and must be one of the following: ${validPropertyTypes.join(', ')}.`);
     }

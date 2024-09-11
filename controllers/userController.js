@@ -470,7 +470,7 @@ exports.uploadProfilePicture = async (req, res) => {
     await unlink(req.file.path);
 
     return res.status(200).json({
-      message: "User image successfully changed",
+      message: "User image successfully uploaded.",
       data: updatedUser.profilePicture,
     });
 

@@ -578,3 +578,38 @@ exports.getAllUsers = async (req, res) => {
     });
   }
 };
+
+
+exports.deleteTenant = async (req, res) => {
+  try {
+    const { tenantId } = req.params; // Extract tenant ID from request parameters
+    const landlordId = req.user.id; // Retrieve landlord ID from authenticated user
+
+    // Find the tenant to ensure they exist and are associated with the landlord
+    const tenant = await tenantModel.findById(tenantId).populate('property');
+
+    if (!tenant) {
+      return res.status(404).json({ message: 'Tenant not found.' });
+    }
+
+    // Check if the tenant's landlord matches the authenticated user
+    if (tenant.landlord.toString() !== landlordId) {
+      return res.status(403).json({ message: 'You are not authorized to delete this tenant.' });
+    }
+
+    // Delete the tenant from the landlord's list
+    await userModel.findByIdAndUpdate(landlordId, { $pull: { tenants: tenantId } });
+
+    // Delete the tenant from the property's tenant list
+    await propertyModel.findByIdAndUpdate(tenant.property._id, { $pull: { tenants: tenantId } });
+
+    // Delete the tenant from the tenant model
+    await tenantModel.findByIdAndDelete(tenantId);
+
+    res.status(200).json({ message: 'Tenant deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting tenant:', error); // Log the error details
+    res.status(500).json({ message: 'Internal server error.', error: error.message });
+  }
+};
+

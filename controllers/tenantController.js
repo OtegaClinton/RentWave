@@ -90,6 +90,11 @@ exports.onboardTenant = async (req, res) => {
       return res.status(404).json({ message: 'Property not found.' });
     }
 
+    // Check if the property has a landlord and if it matches the authenticated landlord
+    if (!property.landlord || property.landlord.toString() !== landlordId) {
+      return res.status(403).json({ message: 'You cannot onboard a tenant to a property that you do not own.' });
+    }
+
     // Check if a tenant with the provided email or phone number already exists
     const existingTenant = await tenantModel.findOne({ $or: [{ email }, { phoneNumber }] });
     if (existingTenant) {

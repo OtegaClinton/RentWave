@@ -34,34 +34,80 @@ const notifyDueRent = async () => {
 
 
 
+// const dueRentReminder = async () => {
+//     try {
+//       // Find tenants whose lease ends within the next 7 days
+//       const upcomingLeaseEndTenants = await tenantModel.find({
+//         leaseEnd: {
+//           $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Lease ending within the next 7 days
+//         }
+//       }).populate('landlord');
+  
+//       for (const tenant of upcomingLeaseEndTenants) {
+//         const { firstName, email, leaseEnd, landlord } = tenant;
+  
+//         // Construct the email options for lease end reminder
+//         const mailOptions = {
+//           email: email, 
+//           subject: 'Reminder: Lease Expiry Approaching',
+//           message: `Dear ${firstName}, this is a reminder that your lease is approaching its end on ${leaseEnd.toDateString()}. Please make necessary arrangements or contact your landlord, ${landlord.firstName} ${landlord.lastName}, to discuss renewal or further steps.`,
+//           html: `<p>Dear ${firstName},</p><p>This is a reminder that your lease is approaching its end on <strong>${leaseEnd.toDateString()}</strong>. Please make necessary arrangements or contact your landlord, ${landlord.firstName} ${landlord.lastName}, to discuss renewal or further steps.</p><p>Thank you,<br/>RentWave</p>`
+//         };
+  
+//         // Send the email notification
+//         await sendMail(mailOptions);
+//       }
+//     } catch (error) {
+//       console.error('Error sending lease end reminder:', error);
+//     }
+//   };
+
+
 const dueRentReminder = async () => {
-    try {
-      // Find tenants whose lease ends within the next 7 days
-      const upcomingLeaseEndTenants = await tenantModel.find({
-        leaseEnd: {
-          $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Lease ending within the next 7 days
-        }
-      }).populate('landlord');
-  
-      for (const tenant of upcomingLeaseEndTenants) {
-        const { firstName, email, leaseEnd, landlord } = tenant;
-  
-        // Construct the email options for lease end reminder
-        const mailOptions = {
-          email: email, 
-          subject: 'Reminder: Lease Expiry Approaching',
-          message: `Dear ${firstName}, this is a reminder that your lease is approaching its end on ${leaseEnd.toDateString()}. Please make necessary arrangements or contact your landlord, ${landlord.firstName} ${landlord.lastName}, to discuss renewal or further steps.`,
-          html: `<p>Dear ${firstName},</p><p>This is a reminder that your lease is approaching its end on <strong>${leaseEnd.toDateString()}</strong>. Please make necessary arrangements or contact your landlord, ${landlord.firstName} ${landlord.lastName}, to discuss renewal or further steps.</p><p>Thank you,<br/>RentWave</p>`
-        };
-  
-        // Send the email notification
-        await sendMail(mailOptions);
+  try {
+    // Find tenants whose lease ends within the next 7 days
+    const upcomingLeaseEndTenants = await tenantModel.find({
+      leaseEnd: {
+        $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Lease ending within the next 7 days
       }
-    } catch (error) {
-      console.error('Error sending lease end reminder:', error);
-    }
-  };
-  
+    }).populate('landlord');
+
+    // Send emails concurrently
+    await Promise.all(upcomingLeaseEndTenants.map(async (tenant) => {
+      if (!tenant) {
+        console.error('Tenant data is null or undefined.');
+        return; // Skip this iteration if tenant is null
+      }
+
+      const { firstName, email, leaseEnd, landlord } = tenant;
+
+      // Check if landlord is null
+      if (!landlord) {
+        console.error(`Tenant ${firstName} does not have an associated landlord.`);
+        return; // Skip this iteration if landlord is null
+      }
+
+      // Construct the email options for lease end reminder
+      const mailOptions = {
+        email: email,
+        subject: 'Reminder: Lease Expiry Approaching',
+        message: `Dear ${firstName}, this is a reminder that your lease is approaching its end on ${leaseEnd.toDateString()}. Please make necessary arrangements or contact your landlord, ${landlord.firstName} ${landlord.lastName}, to discuss renewal or further steps.`,
+        html: `<p>Dear ${firstName},</p><p>This is a reminder that your lease is approaching its end on <strong>${leaseEnd.toDateString()}</strong>. Please make necessary arrangements or contact your landlord, ${landlord.firstName} ${landlord.lastName}, to discuss renewal or further steps.</p><p>Thank you,<br/>RentWave</p>`
+      };
+
+      // Send the email notification
+      try {
+        await sendMail(mailOptions);
+      } catch (err) {
+        console.error(`Failed to send email to ${email}:`, err);
+      }
+    }));
+  } catch (error) {
+    console.error('Error sending lease end reminder:', error);
+  }
+};
+
+
 
 
 

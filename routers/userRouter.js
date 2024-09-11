@@ -10,7 +10,8 @@ const {
     uploadProfilePicture,
     deleteUser,
     getUserById,
-    getAllUsers
+    getAllUsers,
+    deleteTenant
 } = require("../controllers/userController");
 
 const {userValidator}= require("../middlewares/userValidator");
@@ -44,6 +45,9 @@ userRouter.get('/user/:id', authenticator, getUserById);
 
 // Get all users
 userRouter.get('/users',authenticator,authorization,authorizationSuper, getAllUsers);
+
+// DELETE /api/v1/tenants/:tenantId - Delete tenant by ID
+userRouter.delete('/tenants/:tenantId',authenticator, deleteTenant);
 
 
 module.exports= userRouter;

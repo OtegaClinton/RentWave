@@ -15,6 +15,7 @@ const rentDueRouter = require("./routers/dueRentRouter");
 const app = express();
 
 
+
 // Enable CORS 
 app.use(cors("*"));
 

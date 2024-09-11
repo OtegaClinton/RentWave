@@ -8,7 +8,7 @@ const sendMail=require("../helpers/email");
 const {html,reverifyHtml} = require("../helpers/html");
 const cloudinary = require("../helpers/cloudinary");
 const fileSystem = require("fs");
-
+const { unlink } = require('fs/promises');
 
 exports.signUp = async (req, res) => {
   try {

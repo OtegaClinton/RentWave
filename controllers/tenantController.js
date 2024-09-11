@@ -19,13 +19,12 @@ const isInvalidString = (str) => {
   return hasInvalidChars || hasConsecutiveSymbols || str.trim().length === 0;
 };
 
-// Main validation function
 exports.onboardTenant = async (req, res) => {
   const errors = [];
 
   try {
-    // Extract fields from request body
-    const {
+    // Extract and trim fields from request body
+    let {
       firstName,
       lastName,
       email,
@@ -36,12 +35,19 @@ exports.onboardTenant = async (req, res) => {
       leaseEnd,
     } = req.body;
 
+    firstName = firstName.trim();
+    lastName = lastName.trim();
+    email = email.trim().toLowerCase();
+    phoneNumber = phoneNumber.trim();
+    leaseStart = leaseStart.trim();
+    leaseEnd = leaseEnd.trim();
+
     // Validate each field
-    if (!firstName || typeof firstName !== 'string' || firstName.trim().length < 3 || firstName.trim().length > 100 || isInvalidString(firstName)) {
+    if (!firstName || typeof firstName !== 'string' || firstName.length < 3 || firstName.length > 100 || isInvalidString(firstName)) {
       errors.push('First name must be a valid string between 3 and 100 characters, not empty, and should not contain consecutive symbols.');
     }
 
-    if (!lastName || typeof lastName !== 'string' || lastName.trim().length < 3 || lastName.trim().length > 100 || isInvalidString(lastName)) {
+    if (!lastName || typeof lastName !== 'string' || lastName.length < 3 || lastName.length > 100 || isInvalidString(lastName)) {
       errors.push('Last name must be a valid string between 3 and 100 characters, not empty, and should not contain consecutive symbols.');
     }
 
@@ -64,8 +70,10 @@ exports.onboardTenant = async (req, res) => {
     const start = new Date(leaseStart);
     const end = new Date(leaseEnd);
 
-    if (!leaseStart || isNaN(start.getTime())) {
-      errors.push('Lease start date is required and must be a valid date.');
+    // Ensure dates are valid and not in the past
+    const today = new Date();
+    if (!leaseStart || isNaN(start.getTime()) || start < today) {
+      errors.push('Lease start date is required, must be a valid date, and cannot be in the past.');
     }
 
     if (!leaseEnd || isNaN(end.getTime()) || start >= end) {
@@ -113,7 +121,7 @@ exports.onboardTenant = async (req, res) => {
     const newTenant = new tenantModel({
       firstName,
       lastName,
-      email: email.toLowerCase(),
+      email,
       password: hashedPassword,
       phoneNumber,
       landlord: landlordId,
@@ -159,7 +167,6 @@ exports.onboardTenant = async (req, res) => {
     }
   }
 };
-
 
 
 

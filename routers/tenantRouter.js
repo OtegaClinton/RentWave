@@ -8,7 +8,7 @@ const {
     addProfilePictureTenant,
     updateProfilePicture,
     createMaintenanceRequest,
-    updateMaintenanceStatus
+  
 }= require("../controllers/tenantController");
 const uploader = require("../helpers/multer");
 
@@ -34,7 +34,7 @@ tenantRouter.post(
   );
 
 
-  tenantRouter.patch('/maintenance/:requestId',updateMaintenanceStatus);
+
 
 
 

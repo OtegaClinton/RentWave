@@ -11,7 +11,8 @@ const {
     deleteUser,
     getUserById,
     getAllUsers,
-    deleteTenant
+    deleteTenant,
+    updateMaintenanceStatus
 } = require("../controllers/userController");
 
 const {userValidator}= require("../middlewares/userValidator");
@@ -48,6 +49,9 @@ userRouter.get('/users',authenticator,authorization,authorizationSuper, getAllUs
 
 // DELETE /api/v1/tenants/:tenantId - Delete tenant by ID
 userRouter.delete('/tenants/:tenantId',authenticator, deleteTenant);
+
+
+userRouter.patch('/maintenance/:requestId',authenticator,updateMaintenanceStatus);
 
 
 module.exports= userRouter;

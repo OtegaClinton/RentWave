@@ -719,40 +719,4 @@ exports.createMaintenanceRequest = async (req, res) => {
 
 
 
-exports.updateMaintenanceStatus = async (req, res) => {
-  try {
-    const { requestId } = req.params; 
-    const { status } = req.body; 
 
-    // Validate status input
-    if (!['Pending', 'In Progress', 'Completed'].includes(status)) {
-      return res.status(400).json({
-        message: 'Invalid status. Status must be "Pending", "In Progress", or "Completed".'
-      });
-    }
-
-    // Find the maintenance request by ID
-    const maintenanceRequest = await maintenanceModel.findById(requestId);
-    if (!maintenanceRequest) {
-      return res.status(404).json({ message: "Maintenance request not found." });
-    }
-
-    // Update the status and completion date if the status is "Completed"
-    maintenanceRequest.status = status;
-    if (status === 'Completed') {
-      maintenanceRequest.completionDate = new Date();
-    }
-
-    await maintenanceRequest.save();
-
-    res.status(200).json({
-      message: 'Maintenance request status updated successfully.',
-      maintenanceRequest
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error updating maintenance request status.',
-      error: error.message
-    });
-  }
-};

@@ -613,3 +613,66 @@ exports.deleteTenant = async (req, res) => {
   }
 };
 
+
+
+
+exports.updateMaintenanceStatus = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { status } = req.body;
+
+    // Validate status input
+    if (!['Pending', 'In Progress', 'Completed'].includes(status)) {
+      return res.status(400).json({
+        message: 'Invalid status. Status must be "Pending", "In Progress", or "Completed".'
+      });
+    }
+
+    // Retrieve landlordId from the authenticated user
+    const landlordId = req.user.id;
+
+    // Find the maintenance request by ID
+    const maintenanceRequest = await maintenanceModel.findById(requestId);
+    if (!maintenanceRequest) {
+      return res.status(404).json({ message: "Maintenance request not found." });
+    }
+
+    // Verify that the user updating the status is the landlord of the property related to this maintenance request
+    const property = await propertyModel.findById(maintenanceRequest.propertyId);
+    if (!property || property.listedBy.toString() !== landlordId.toString()) {
+      return res.status(403).json({ message: "You are not authorized to update this maintenance request." });
+    }
+
+    // Ensure that once the status is "In Progress," it cannot be changed back to "Pending"
+    if (maintenanceRequest.status === 'In Progress' && status === 'Pending') {
+      return res.status(400).json({
+        message: 'Cannot change status from "In Progress" back to "Pending".'
+      });
+    }
+
+    // Ensure that once the status is "Completed," it cannot be changed back to "In Progress" or "Pending"
+    if (maintenanceRequest.status === 'Completed' && ['Pending', 'In Progress'].includes(status)) {
+      return res.status(400).json({
+        message: 'Cannot change status from "Completed" back to "Pending" or "In Progress".'
+      });
+    }
+
+    // Update the status and set the completion date if the status is "Completed"
+    maintenanceRequest.status = status;
+    if (status === 'Completed') {
+      maintenanceRequest.completionDate = new Date();
+    }
+
+    await maintenanceRequest.save();
+
+    res.status(200).json({
+      message: 'Maintenance request status updated successfully.',
+      maintenanceRequest
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error updating maintenance request status.',
+      error: error.message
+    });
+  }
+};

@@ -92,10 +92,7 @@ exports.onboardTenant = async (req, res) => {
       return res.status(404).json({ message: 'Property not found.' });
     }
 
-    // Check if the property has a listedBy (landlord) and if it matches the authenticated landlord
-    console.log('Authenticated landlord ID:', landlordId);
-    console.log('Property listedBy ID:', property.listedBy.toString());
-    
+    // Check if the property has a landlord and if it matches the authenticated landlord
     if (!property.listedBy || property.listedBy.toString() !== landlordId.toString()) {
       return res.status(403).json({ message: 'You cannot onboard a tenant to a property that you do not own.' });
     }
@@ -131,6 +128,21 @@ exports.onboardTenant = async (req, res) => {
     // Update landlord and property records with the new tenant ID
     await userModel.findByIdAndUpdate(landlordId, { $push: { tenants: newTenant._id } }, { new: true });
     await propertyModel.findByIdAndUpdate(propertyId, { $push: { tenants: newTenant._id } }, { new: true });
+
+    // Send an email to the tenant
+    const emailOptions = {
+      to: email,
+      subject: 'Welcome to RentWave!',
+      html: `<p>Dear ${firstName} ${lastName},</p>
+             <p>You have been successfully onboarded as a tenant.</p>
+             <p>Your login credentials are as follows:</p>
+             <p>Email: ${email}</p>
+             <p>Password: ${password}</p>
+             <p>Please change your password upon first login.</p>
+             <p>Thank you for choosing RentWave.</p>`,
+    };
+
+    await sendMail(emailOptions);
 
     // Return a success response
     res.status(201).json({ message: 'Tenant onboarded successfully.', tenant: newTenant });

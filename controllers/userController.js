@@ -21,9 +21,24 @@ exports.signUp = async (req, res) => {
       phoneNumber = ''
     } = req.body;
 
-    // Check for undefined or null values
-    if (typeof firstName !== 'string' || typeof lastName !== 'string' || typeof email !== 'string' || typeof password !== 'string' || typeof confirmPassword !== 'string' || typeof phoneNumber !== 'string') {
-      return res.status(400).json({ message: 'Invalid input data' });
+    // Check for missing or empty fields
+    if (!firstName.trim()) {
+      return res.status(400).json({ message: 'First name is required.' });
+    }
+    if (!lastName.trim()) {
+      return res.status(400).json({ message: 'Last name is required.' });
+    }
+    if (!email.trim()) {
+      return res.status(400).json({ message: 'Email is required.' });
+    }
+    if (!password) {
+      return res.status(400).json({ message: 'Password is required.' });
+    }
+    if (!confirmPassword) {
+      return res.status(400).json({ message: 'Confirm password is required.' });
+    }
+    if (!phoneNumber.trim()) {
+      return res.status(400).json({ message: 'Phone number is required.' });
     }
 
     // Trim and sanitize input
@@ -32,7 +47,6 @@ exports.signUp = async (req, res) => {
     email = email.trim().toLowerCase();
     phoneNumber = phoneNumber.trim();
 
-    // Log trimmed values for debugging
     console.log('Trimmed Values:', { firstName, lastName, email, phoneNumber });
 
     // Define regex patterns
@@ -58,18 +72,18 @@ exports.signUp = async (req, res) => {
       return res.status(400).json({ message: 'Confirm password contains consecutive symbols. Please avoid repeating special characters.' });
     }
     if (consecutiveSymbolsPattern.test(phoneNumber)) {
-      return res.status(400).json({ message: 'Phone number contains consecutive symbols. Please avoid repeating special characters.' });
+      return res.status(400).json({ message: 'Phone number contains consecutive symbols. Please enter only digits.' });
     }
 
-    // Validate input
+    // Validate input lengths and patterns
     if (firstName.length < 3) {
-      return res.status(400).json({ message: 'First name must be at least 3 characters long' });
+      return res.status(400).json({ message: 'First name must be at least 3 characters long.' });
     }
     if (lastName.length < 3) {
-      return res.status(400).json({ message: 'Last name must be at least 3 characters long' });
+      return res.status(400).json({ message: 'Last name must be at least 3 characters long.' });
     }
     if (!emailPattern.test(email)) {
-      return res.status(400).json({ message: 'Invalid email address format. Please provide a valid email address.' });
+      return res.status(400).json({ message: 'Invalid email format. Please provide a valid email address.' });
     }
     if (!passwordPattern.test(password)) {
       return res.status(400).json({ message: 'Password must be at least 6 characters long, contain at least one uppercase letter, and one special character.' });
@@ -88,10 +102,10 @@ exports.signUp = async (req, res) => {
 
     if (existingUser) {
       if (existingUser.email === email) {
-        return res.status(400).json({ message: 'Email is already in use. Please use a different email address.' });
+        return res.status(400).json({ message: 'The email address is already in use. Please use a different email address.' });
       }
       if (existingUser.phoneNumber === phoneNumber) {
-        return res.status(400).json({ message: 'Phone number is already in use. Please use a different phone number.' });
+        return res.status(400).json({ message: 'The phone number is already in use. Please use a different phone number.' });
       }
     }
 
@@ -129,7 +143,7 @@ exports.signUp = async (req, res) => {
     });
 
     res.status(201).json({
-      message: `Welcome ${newUser.firstName}, kindly check your email to verify your email address.`,
+      message: `Welcome ${newUser.firstName}, kindly check your email to verify your account.`,
       data: {
         id: newUser._id,
         firstName: newUser.firstName,
@@ -138,14 +152,14 @@ exports.signUp = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error during sign-up:', error); // Log the error details
+    console.error('Error during sign-up:', error);
+    
+    // Handle duplicate key error
     if (error.code === 11000) {
-      // Handle duplicate key errors
-      const field = Object.keys(error.keyValue)[0]; // Get the field that caused the error
-      const value = Object.values(error.keyValue)[0]; // Get the value of the field
-
+      const field = Object.keys(error.keyValue)[0];
+      const value = Object.values(error.keyValue)[0];
       return res.status(400).json({
-        message: `Duplicate key error: ${field} '${value}' already exists. Please use a different ${field}.`
+        message: `${field.charAt(0).toUpperCase() + field.slice(1)} '${value}' already exists. Please use a different ${field}.`
       });
     }
 
@@ -155,6 +169,7 @@ exports.signUp = async (req, res) => {
     });
   }
 };
+
 
 
 
@@ -285,8 +300,21 @@ exports.logIn = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Check if the request body is empty
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return res.status(400).json({ message: 'Please provide your email and password.' });
+    }
+
+    // Validate input
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required.' });
+    }
+    if (!password) {
+      return res.status(400).json({ message: 'Password is required.' });
+    }
+
     // Normalize email to lower case
-    const normalizedEmail = email.toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
 
     // Check if the user exists
     const user = await userModel.findOne({ email: normalizedEmail });
@@ -333,9 +361,11 @@ exports.logIn = async (req, res) => {
       redirectUrl: redirectUrl
     });
   } catch (error) {
+    console.error('Error during login:', error); // Log the error for debugging
     res.status(500).json({ message: 'An unexpected error occurred. Please try again later.' });
   }
 };
+
 
 
 

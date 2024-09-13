@@ -4,6 +4,10 @@ const tenantModel = require("../models/tenantModel");
 const cloudinary = require("../helpers/cloudinary");
 const mongoose = require('mongoose');
 const fileSystem = require("fs");
+const path = require('path');
+const sendMail=require("../helpers/email");
+
+
 
 
 exports.createProperty = async (req, res) => {
@@ -51,9 +55,8 @@ exports.createProperty = async (req, res) => {
 
     const validPropertyTypes = ['apartment', 'house', 'condo', 'townhouse']; // Make all types lowercase for comparison
     if (!propertyType || !validPropertyTypes.includes(propertyType.toLowerCase())) {
-    errors.push(`Property type is required and must be one of the following: ${validPropertyTypes.map(type => type.charAt(0).toUpperCase() + type.slice(1)).join(', ')}.`);
+      errors.push(`Property type is required and must be one of the following: ${validPropertyTypes.map(type => type.charAt(0).toUpperCase() + type.slice(1)).join(', ')}.`);
     }
-
 
     if (!bedrooms || isNaN(bedrooms) || bedrooms < 1) {
       errors.push('Number of bedrooms is required and must be at least 1.');
@@ -87,13 +90,17 @@ exports.createProperty = async (req, res) => {
       return res.status(400).json({ message: 'A property with the same name and location already exists for this landlord.' });
     }
 
-    // Upload images to Cloudinary concurrently
+    // Upload images to Cloudinary concurrently and handle file deletion
     const uploadPromises = imageFiles.map(file =>
       cloudinary.uploader.upload(file.path, { folder: 'properties' })
         .then(result => imageDetails.push({
           pictureId: result.public_id,
           pictureUrl: result.secure_url
         }))
+        .catch(err => {
+          console.error("Error uploading image:", err.message);
+          // Optionally handle the error by returning a response or logging
+        })
         .finally(() => {
           // Remove the uploaded file from local storage after each upload
           fileSystem.unlink(file.path, (error) => {
@@ -125,6 +132,99 @@ exports.createProperty = async (req, res) => {
     // Update landlord with the new property ID
     landlord.properties.push(newProperty._id);
     await landlord.save();
+
+    // Send confirmation email to landlord
+    const mailOptions = {
+      to: landlord.email,
+      subject: 'Property Listed Successfully',
+      text: `Dear ${landlord.firstName},\n\nYour property "${name}" located at "${location}" has been listed successfully.\n\nDetails:\n- Price: ${price}\n- Property Type: ${propertyType}\n- Bedrooms: ${bedrooms}\n- Bathrooms: ${bathrooms}\n- Amenities: ${amenities ? amenities.split(',').map(item => item.trim()).join(', ') : 'None'}\n- Description: ${description || 'No description provided'}\n\nThank you for using our platform.\n\nBest regards,\nThe RentWave Team`,
+      html: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Property Listing Confirmation - RentWave</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f0f4f8; /* Light background for contrast */
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #d0dbe1;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            background-color: #ffff; /* Clean white background */
+        }
+        .header {
+            background: #5F92DF; /* Royal Blue */
+            padding: 15px;
+            display: flex;
+            align-items: center; /* Align items vertically */
+            justify-content: center; /* Center content horizontally */
+            position: relative; /* Allows positioning of the logo */
+            border-bottom: 2px solid #5F92DF; /* Darker shade of Royal Blue */
+            color: #f4f4f4;
+            border-radius: 10px 10px 0 0; /* Rounded top corners */
+        }
+        .header img {
+            width: 120px;
+            height: 100px;
+            object-fit: contain;
+            position: absolute;
+            left: 15px; /* Position logo on the left */
+        }
+        .content {
+            padding: 20px;
+            color: #333333;
+        }
+        .footer {
+            background: #5F92DF; /* Darker shade of Royal Blue */
+            padding: 15px;
+            text-align: center;
+            border-top: 2px solid #5F92DF; /* Royal Blue */
+            font-size: 0.9em;
+            color: #f4f4f4;
+            border-radius: 0 0 10px 10px; /* Rounded bottom corners */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://rent-wave.vercel.app/assets/logo-D2c4he43.png" alt="RentWave Logo">
+            <h1>Property Listing Confirmation</h1>
+        </div>
+        <div class="content">
+            <p>Dear ${landlord.firstName},</p>
+            <p>Your property "<strong>${name}</strong>" located at "<strong>${location}</strong>" has been listed successfully.</p>
+            <p><strong>Details:</strong></p>
+            <ul>
+                <li><strong>Price:</strong> ${price}</li>
+                <li><strong>Property Type:</strong> ${propertyType}</li>
+                <li><strong>Bedrooms:</strong> ${bedrooms}</li>
+                <li><strong>Bathrooms:</strong> ${bathrooms}</li>
+                <li><strong>Amenities:</strong> ${amenities ? amenities.split(',').map(item => item.trim()).join(', ') : 'None'}</li>
+                <li><strong>Description:</strong> ${description || 'No description provided'}</li>
+            </ul>
+            <p>Thank you for using our platform.</p>
+            <p>Best regards,<br>The RentWave Team</p>
+        </div>
+        <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} RentWave. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+`
+    };
+
+    await sendMail(mailOptions);
 
     res.status(201).json({
       message: 'Property listed successfully',

@@ -18,10 +18,84 @@ const notifyDueRent = async () => {
       if (!tenant) continue; // Ensure the tenant exists
 
       const mailOptions = {
-        email: tenant.email,
+        to: tenant.email,
         subject: 'Rent Due Reminder',
         message: `Dear ${tenant.firstName}, this is a reminder that your rent of ${amount} is due on ${dueDate.toDateString()}. Please ensure payment is made to avoid any late fees.`,
-        html: `<p>Dear ${tenant.firstName},</p><p>This is a reminder that your rent of <strong>${amount}</strong> is due on <strong>${dueDate.toDateString()}</strong>. Please ensure payment is made to avoid any late fees.</p><p>Thank you,<br/>RentWave</p>`
+        html: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Rent Due Reminder - RentWave</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f0f4f8; /* Light background for contrast */
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #d0dbe1;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            background-color: #ffff; /* Clean white background */
+        }
+        .header {
+            background: #5F92DF; /* Royal Blue */
+            padding: 15px;
+            display: flex;
+            align-items: center; /* Align items vertically */
+            justify-content: center; /* Center content horizontally */
+            position: relative; /* Allows positioning of the logo */
+            border-bottom: 2px solid #5F92DF; /* Darker shade of Royal Blue */
+            color: #f4f4f4;
+            border-radius: 10px 10px 0 0; /* Rounded top corners */
+        }
+        .header img {
+            width: 120px;
+            height: 100px;
+            object-fit: contain;
+            position: absolute;
+            left: 15px; /* Position logo on the left */
+        }
+        .content {
+            padding: 20px;
+            color: #333333;
+        }
+        .footer {
+            background: #5F92DF; /* Darker shade of Royal Blue */
+            padding: 15px;
+            text-align: center;
+            border-top: 2px solid #5F92DF; /* Royal Blue */
+            font-size: 0.9em;
+            color: #f4f4f4;
+            border-radius: 0 0 10px 10px; /* Rounded bottom corners */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://rent-wave.vercel.app/assets/logo-D2c4he43.png" alt="RentWave Logo">
+            <h1>Rent Due Reminder</h1>
+        </div>
+        <div class="content">
+            <p>Dear ${tenant.firstName},</p>
+            <p>This is a reminder that your rent of <strong>${amount}</strong> is due on <strong>${dueDate.toDateString()}</strong>. Please ensure payment is made to avoid any late fees.</p>
+            <p>If you have any questions or need assistance, feel free to contact us.</p>
+            <p>Thank you,<br>RentWave Team</p>
+        </div>
+        <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} RentWave. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+`
       };
 
       await sendMail(mailOptions);
@@ -90,10 +164,84 @@ const dueRentReminder = async () => {
 
       // Construct the email options for lease end reminder
       const mailOptions = {
-        email: email,
+        to: email,
         subject: 'Reminder: Lease Expiry Approaching',
         message: `Dear ${firstName}, this is a reminder that your lease is approaching its end on ${leaseEnd.toDateString()}. Please make necessary arrangements or contact your landlord, ${landlord.firstName} ${landlord.lastName}, to discuss renewal or further steps.`,
-        html: `<p>Dear ${firstName},</p><p>This is a reminder that your lease is approaching its end on <strong>${leaseEnd.toDateString()}</strong>. Please make necessary arrangements or contact your landlord, ${landlord.firstName} ${landlord.lastName}, to discuss renewal or further steps.</p><p>Thank you,<br/>RentWave</p>`
+        html: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Lease End Reminder - RentWave</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f0f4f8; /* Light background for contrast */
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #d0dbe1;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            background-color: #ffff; /* Clean white background */
+        }
+        .header {
+            background: #5F92DF; /* Royal Blue */
+            padding: 15px;
+            display: flex;
+            align-items: center; /* Align items vertically */
+            justify-content: center; /* Center content horizontally */
+            position: relative; /* Allows positioning of the logo */
+            border-bottom: 2px solid #5F92DF; /* Darker shade of Royal Blue */
+            color: #f4f4f4;
+            border-radius: 10px 10px 0 0; /* Rounded top corners */
+        }
+        .header img {
+            width: 120px;
+            height: 100px;
+            object-fit: contain;
+            position: absolute;
+            left: 15px; /* Position logo on the left */
+        }
+        .content {
+            padding: 20px;
+            color: #333333;
+        }
+        .footer {
+            background: #5F92DF; /* Darker shade of Royal Blue */
+            padding: 15px;
+            text-align: center;
+            border-top: 2px solid #5F92DF; /* Royal Blue */
+            font-size: 0.9em;
+            color: #f4f4f4;
+            border-radius: 0 0 10px 10px; /* Rounded bottom corners */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://rent-wave.vercel.app/assets/logo-D2c4he43.png" alt="RentWave Logo">
+            <h1>Lease End Reminder</h1>
+        </div>
+        <div class="content">
+            <p>Dear ${firstName},</p>
+            <p>This is a reminder that your lease is approaching its end on <strong>${leaseEnd.toDateString()}</strong>. Please make necessary arrangements or contact your landlord, ${landlord.firstName} ${landlord.lastName}, to discuss renewal or further steps.</p>
+            <p>If you have any questions or need assistance, feel free to reach out to us.</p>
+            <p>Thank you,<br>RentWave Team</p>
+        </div>
+        <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} RentWave. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+`
       };
 
       // Send the email notification
@@ -140,17 +288,87 @@ const generateAndSendInvoicesForToday = async () => {
 
       // Format the invoice message
       const invoiceMessage = `
-        <p>Dear ${invoice.tenantName},</p>
-        <p>This is your rent invoice for the property at <strong>${invoice.propertyAddress}</strong>:</p>
-        <ul>
-          <li><strong>Invoice Date:</strong> ${invoice.invoiceDate}</li>
-          <li><strong>Due Date:</strong> ${invoice.dueDate}</li>
-          <li><strong>Rent Amount:</strong> $${invoice.rentAmount.toFixed(2)}</li>
-          <li><strong>Additional Charges:</strong> $${invoice.additionalCharges.toFixed(2)}</li>
-          <li><strong>Total Amount Due:</strong> $${invoice.totalAmountDue.toFixed(2)}</li>
-        </ul>
-        <p>Please ensure the payment is made. If you have any questions or concerns, please contact us.</p>
-        <p>Thank you,<br/>RentWave Team</p>
+        <!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Rent Invoice - RentWave</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f0f4f8; /* Light background for contrast */
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #d0dbe1;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            background-color: #ffff; /* Clean white background */
+        }
+        .header {
+            background: #5F92DF; /* Royal Blue */
+            padding: 15px;
+            display: flex;
+            align-items: center; /* Align items vertically */
+            justify-content: center; /* Center content horizontally */
+            position: relative; /* Allows positioning of the logo */
+            border-bottom: 2px solid #5F92DF; /* Darker shade of Royal Blue */
+            color: #f4f4f4;
+            border-radius: 10px 10px 0 0; /* Rounded top corners */
+        }
+        .header img {
+            width: 120px;
+            height: 100px;
+            object-fit: contain;
+            position: absolute;
+            left: 15px; /* Position logo on the left */
+        }
+        .content {
+            padding: 20px;
+            color: #333333;
+        }
+        .footer {
+            background: #5F92DF; /* Darker shade of Royal Blue */
+            padding: 15px;
+            text-align: center;
+            border-top: 2px solid #5F92DF; /* Royal Blue */
+            font-size: 0.9em;
+            color: #f4f4f4;
+            border-radius: 0 0 10px 10px; /* Rounded bottom corners */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://rent-wave.vercel.app/assets/logo-D2c4he43.png" alt="RentWave Logo">
+            <h1>Rent Invoice</h1>
+        </div>
+        <div class="content">
+            <p>Dear ${invoice.tenantName},</p>
+            <p>This is your rent invoice for the property at <strong>${invoice.propertyAddress}</strong>:</p>
+            <ul>
+                <li><strong>Invoice Date:</strong> ${invoice.invoiceDate}</li>
+                <li><strong>Due Date:</strong> ${invoice.dueDate}</li>
+                <li><strong>Rent Amount:</strong> $${invoice.rentAmount.toFixed(2)}</li>
+                <li><strong>Additional Charges:</strong> $${invoice.additionalCharges.toFixed(2)}</li>
+                <li><strong>Total Amount Due:</strong> $${invoice.totalAmountDue.toFixed(2)}</li>
+            </ul>
+            <p>Please ensure the payment is made by the due date. If you have any questions or concerns, please contact us.</p>
+            <p>Thank you,<br>RentWave Team</p>
+        </div>
+        <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} RentWave. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
       `;
 
       // Send the invoice email

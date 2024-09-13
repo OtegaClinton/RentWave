@@ -765,18 +765,85 @@ exports.createMaintenanceRequest = async (req, res) => {
     }
 
     // Compose email content
-    const emailContent = `
-      <p>Dear ${landlord.firstName} ${landlord.lastName},</p>
-      <p>A maintenance request has been submitted for the property you manage.</p>
-      <p><strong>Request Description:</strong> ${requestFor}</p>
-      <p><strong>Additional Information:</strong> ${additionalInfo || 'None'}</p>
-      <p><strong>Available Dates:</strong> ${availableDates.join(', ')}</p>
-      <p><strong>Phone Number:</strong> ${phoneNumber}</p>
-      <p>Please review the request and take appropriate action.</p>
-      <p>Best regards,</p>
-      <p>Your Property Management System,</p>
-      <p>RentWave.</p>
-    `;
+    const emailContent = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Maintenance Request Notification - RentWave</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f0f4f8; /* Light background for contrast */
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #d0dbe1;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            background-color: #ffff; /* Clean white background */
+        }
+        .header {
+            background: #5F92DF; /* Royal Blue */
+            padding: 15px;
+            display: flex;
+            align-items: center; /* Align items vertically */
+            justify-content: center; /* Center content horizontally */
+            position: relative; /* Allows positioning of the logo */
+            border-bottom: 2px solid #5F92DF; /* Darker shade of Royal Blue */
+            color: #f4f4f4;
+            border-radius: 10px 10px 0 0; /* Rounded top corners */
+        }
+        .header img {
+            width: 120px;
+            height: 100px;
+            object-fit: contain;
+            position: absolute;
+            left: 15px; /* Position logo on the left */
+        }
+        .content {
+            padding: 20px;
+            color: #333333;
+        }
+        .footer {
+            background: #5F92DF; /* Darker shade of Royal Blue */
+            padding: 15px;
+            text-align: center;
+            border-top: 2px solid #5F92DF; /* Royal Blue */
+            font-size: 0.9em;
+            color: #f4f4f4;
+            border-radius: 0 0 10px 10px; /* Rounded bottom corners */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://rent-wave.vercel.app/assets/logo-D2c4he43.png" alt="RentWave Logo">
+            <h1>Maintenance Request Notification</h1>
+        </div>
+        <div class="content">
+            <p>Dear ${landlord.firstName} ${landlord.lastName},</p>
+            <p>A maintenance request has been submitted for the property you manage.</p>
+            <p><strong>Request Description:</strong> ${requestFor}</p>
+            <p><strong>Additional Information:</strong> ${additionalInfo || 'None'}</p>
+            <p><strong>Available Dates:</strong> ${availableDates.join(', ')}</p>
+            <p><strong>Phone Number:</strong> ${phoneNumber}</p>
+            <p>Please review the request and take appropriate action.</p>
+            <p>Best regards,<br>Your Property Management System,<br>RentWave</p>
+        </div>
+        <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} RentWave. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+`;
 
     // Log email content for debugging
     console.log('Sending email to:', landlord.email);

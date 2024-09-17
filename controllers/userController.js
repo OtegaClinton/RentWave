@@ -1,6 +1,7 @@
 const userModel = require("../models/userModel");
 const propertyModel = require("../models/propertyModel");
 const tenantModel = require('../models/tenantModel'); 
+const maintenanceModel = require('../models/maintenanceModel'); 
 const mongoose = require("mongoose");
 const bcrypt = require('bcryptjs');
 const jwt =require("jsonwebtoken");
@@ -703,6 +704,144 @@ exports.updateMaintenanceStatus = async (req, res) => {
     res.status(500).json({
       message: 'Error updating maintenance request status.',
       error: error.message
+    });
+  }
+};
+
+
+
+
+exports.getMaintenanceRequestsForTenant = async (req, res) => {
+    try {
+        const landlordId = req.user.id; // Get landlord ID from the token
+        const { tenantId } = req.params; // Get tenant ID from request parameters
+
+        // Find the tenant and check if it is managed by the landlord
+        const tenant = await tenantModel.findOne({ _id: tenantId, landlord: landlordId });
+        if (!tenant) {
+            return res.status(404).json({ message: 'Tenant not found or does not belong to this landlord' });
+        }
+
+        // Find all maintenance requests associated with this tenant
+        const maintenanceRequests = await maintenanceModel.find({ tenant: tenantId });
+
+        // Respond with the maintenance requests
+        res.status(200).json({
+            totalNumberOfRequests:maintenanceRequests.length,
+            data: maintenanceRequests
+        });
+    } catch (error) {
+        console.error('Error fetching maintenance requests for the tenant:', error.message);
+        res.status(500).json({ message: 'Error fetching maintenance requests for the tenant' });
+    }
+};
+
+
+
+
+
+
+
+
+exports.getAllMaintenanceRequestsForLandlord = async (req, res) => {
+    try {
+        const landlordId = req.user.id; // Get landlord ID from the token
+
+        // Find all tenants managed by the landlord
+        const tenants = await tenantModel.find({ landlord: landlordId }).select('_id');
+        if (tenants.length === 0) {
+            return res.status(404).json({ message: 'No tenants found for this landlord' });
+        }
+
+        // Extract tenant IDs
+        const tenantIds = tenants.map(tenant => tenant._id);
+
+        // Find all maintenance requests associated with these tenants
+        const maintenanceRequests = await maintenanceModel.find({ tenant: { $in: tenantIds } });
+
+        // Respond with the maintenance requests
+        res.status(200).json({
+            totalNumberOfRequests:maintenanceRequests.length,
+            data: maintenanceRequests
+        });
+    } catch (error) {
+        console.error('Error fetching maintenance requests for landlord\'s tenants:', error.message);
+        res.status(500).json({ message: 'Error fetching maintenance requests for landlord\'s tenants' });
+    }
+};
+
+
+
+
+exports.getTenantById = async (req, res) => {
+  try {
+    const {tenantId} = req.params;
+
+    // Log the received tenant ID
+    console.log('Received tenant ID:', tenantId);
+
+    // Validate the tenant ID
+    if (!tenantId || !mongoose.Types.ObjectId.isValid(tenantId)) {
+      return res.status(400).json({ message: 'Invalid tenant ID format' });
+    }
+
+    // Retrieve the tenant from the database
+    const tenant = await tenantModel.findById(tenantId);
+    if (!tenant) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+
+    // Exclude sensitive fields
+    const { isVerified, password, __v, createdAt, updatedAt, ...tenantDetails } = tenant.toObject();
+
+    res.status(200).json({ data: tenantDetails });
+
+  } catch (error) {
+    console.error("Error retrieving tenant:", error);
+    res.status(500).json({ message: 'An error occurred while retrieving the tenant.' });
+  }
+};
+
+
+
+
+exports.getAllTenants = async (req, res) => {
+  try {
+    // Optionally implement pagination
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    // Fetch tenants with pagination
+    const tenants = await tenantModel.find().skip(skip).limit(limit);
+
+    if (tenants.length === 0) {
+      return res.status(404).json({
+        message: 'No tenants found.',
+      });
+    }
+
+    // Exclude sensitive information
+    const tenantsDetails = tenants.map(tenant => {
+      const { password, __v, createdAt, updatedAt, ...tenantObj } = tenant.toObject();
+      return tenantObj;
+    });
+
+    // Count total number of tenants
+    const totalTenants = await tenantModel.countDocuments();
+
+    return res.status(200).json({
+      message: 'List of all tenants:',
+      data: tenantsDetails,
+      totalNumberOfTenants: totalTenants,
+      currentPage: page,
+      totalPages: Math.ceil(totalTenants / limit),
+    });
+
+  } catch (error) {
+    console.error("Error retrieving tenants:", error); // Log the error for debugging
+    return res.status(500).json({
+      message: 'An error occurred while retrieving the tenants.',
     });
   }
 };

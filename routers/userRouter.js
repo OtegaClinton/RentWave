@@ -12,7 +12,11 @@ const {
     getUserById,
     getAllUsers,
     deleteTenant,
-    updateMaintenanceStatus
+    updateMaintenanceStatus,
+    getMaintenanceRequestsForTenant,
+    getAllMaintenanceRequestsForLandlord,
+    getTenantById,
+    getAllTenants
 } = require("../controllers/userController");
 
 const {userValidator}= require("../middlewares/userValidator");
@@ -53,6 +57,15 @@ userRouter.delete('/tenants/:tenantId',authenticator, deleteTenant);
 
 userRouter.patch('/maintenance/:requestId',authenticator,updateMaintenanceStatus);
 
+userRouter.get('/maintenance-requests/:tenantId',authenticator, getMaintenanceRequestsForTenant);
+
+userRouter.get('/maintenance-requests',authenticator,getAllMaintenanceRequestsForLandlord );
+
+
+userRouter.get('/tenant/:tenantId',authenticator,getTenantById);
+
+
+userRouter.get('/tenants',authenticator,getAllTenants);
 
 module.exports= userRouter;
 

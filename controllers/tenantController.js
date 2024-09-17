@@ -135,7 +135,7 @@ exports.onboardTenant = async (req, res) => {
 
     // Update landlord and property records with the new tenant ID
     await userModel.findByIdAndUpdate(landlordId, { $push: { tenants: newTenant._id } }, { new: true });
-    await propertyModel.findByIdAndUpdate(propertyId, { $push: { tenants: newTenant._id } }, { new: true });
+    await propertyModel.findByIdAndUpdate(propertyId, { $push: { tenants: newTenant._id },$set: { isAvailable: false } }, { new: true });
 
     // Send an email to the tenant
     const emailOptions = {
@@ -675,6 +675,8 @@ exports.changePassword = async (req, res) => {
 };
 
 
+
+
 exports.createMaintenanceRequest = async (req, res) => {
   try {
     const tenantId = req.user.id; // Assuming `req.user.id` is set by authentication middleware
@@ -686,7 +688,7 @@ exports.createMaintenanceRequest = async (req, res) => {
     }
 
     // Extract fields from the request body
-    const { requestFor, additionalInfo, availableDates, phoneNumber } = req.body;
+    const { requestFor, additionalInfo, availableDates } = req.body;
 
     // Validate required fields
     if (!requestFor || typeof requestFor !== 'string' || requestFor.trim().length < 5) {
@@ -701,11 +703,8 @@ exports.createMaintenanceRequest = async (req, res) => {
       });
     }
 
-    if (!phoneNumber || !/^[0-9]{11}$/.test(phoneNumber)) {
-      return res.status(400).json({
-        message: 'Phone number must be exactly 11 digits.'
-      });
-    }
+    // Use the tenant's phone number directly
+    const phoneNumber = tenant.phoneNumber;
 
     // Handle picture uploads, if any
     let pictures = [];
@@ -867,6 +866,7 @@ exports.createMaintenanceRequest = async (req, res) => {
     });
   }
 };
+
 
 
 

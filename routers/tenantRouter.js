@@ -10,6 +10,7 @@ const {
     createMaintenanceRequest,
   
 }= require("../controllers/tenantController");
+const { payRent } = require("../controllers/paymentController")
 const uploader = require("../helpers/multer");
 
 
@@ -32,6 +33,9 @@ tenantRouter.post(
     uploader.array('pictures', 3), 
   createMaintenanceRequest
   );
+
+  // Route for processing rent payments
+tenantRouter.post('/payRent', authenticator, payRent);
 
 
 

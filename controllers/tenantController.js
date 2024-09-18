@@ -703,6 +703,23 @@ exports.createMaintenanceRequest = async (req, res) => {
       });
     }
 
+    // Validate each available date object (date and time)
+    for (const dateObj of availableDates) {
+      if (!dateObj.date || !dateObj.time) {
+        return res.status(400).json({
+          message: 'Each available date must include both date and time.'
+        });
+      }
+      
+      // Validate time format (HH:mm)
+      const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
+      if (!timeRegex.test(dateObj.time)) {
+        return res.status(400).json({
+          message: 'Each time must be in the format HH:mm.'
+        });
+      }
+    }
+
     // Use the tenant's phone number directly
     const phoneNumber = tenant.phoneNumber;
 
@@ -745,7 +762,7 @@ exports.createMaintenanceRequest = async (req, res) => {
       property: tenant.property,
       requestFor: requestFor.trim(),
       additionalInfo: additionalInfo ? additionalInfo.trim() : '',
-      availableDates,
+      availableDates, // now includes both date and time
       phoneNumber,
       pictures
     });
@@ -762,6 +779,9 @@ exports.createMaintenanceRequest = async (req, res) => {
     if (!landlord.email) {
       return res.status(400).json({ message: 'Landlord does not have a registered email address' });
     }
+
+    // Format available dates with time
+    const formattedDates = availableDates.map(dateObj => `${new Date(dateObj.date).toLocaleDateString()} at ${dateObj.time}`);
 
     // Compose email content
     const emailContent = `<!DOCTYPE html>
@@ -831,7 +851,7 @@ exports.createMaintenanceRequest = async (req, res) => {
             <p>A maintenance request has been submitted for the property you manage.</p>
             <p><strong>Request Description:</strong> ${requestFor}</p>
             <p><strong>Additional Information:</strong> ${additionalInfo || 'None'}</p>
-            <p><strong>Available Dates:</strong> ${availableDates.join(', ')}</p>
+            <p><strong>Available Dates:</strong> ${formattedDates.join(', ')}</p>
             <p><strong>Phone Number:</strong> ${phoneNumber}</p>
             <p>Please review the request and take appropriate action.</p>
             <p>Best regards,<br>Your Property Management System,<br>RentWave</p>

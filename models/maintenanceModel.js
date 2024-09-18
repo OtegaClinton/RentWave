@@ -21,7 +21,10 @@ const maintenanceRequestSchema = new mongoose.Schema({
     trim: true
   },
   availableDates: {
-    type: [Date],
+    type: [{
+      date: { type: Date, required: true },
+      time: { type: String, required: true } // Store time as a string in HH:mm format
+    }],
     validate: {
       validator: function(dates) {
         return dates.length === 3; // Ensure exactly 3 dates are provided
@@ -52,6 +55,6 @@ const maintenanceRequestSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-const MaintenanceRequest = mongoose.model('MaintenanceRequest', maintenanceRequestSchema);
+const maintenanceRequestModel = mongoose.model('MaintenanceRequest', maintenanceRequestSchema);
 
-module.exports = MaintenanceRequest;
+module.exports = maintenanceRequestModel;

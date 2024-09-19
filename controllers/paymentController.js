@@ -13,12 +13,8 @@ const generateReceiptPDF = async (payment) => {
     const receiptsDir = path.join(__dirname, 'receipts');
     const receiptPath = path.join(receiptsDir, `receipt-${payment._id}.pdf`);
 
-    console.log('Receipts directory:', receiptsDir);
-    console.log('Receipt path:', receiptPath);
-
     // Ensure receipts directory exists
     if (!fs.existsSync(receiptsDir)) {
-      console.log('Receipts directory does not exist. Creating directory.');
       fs.mkdirSync(receiptsDir, { recursive: true });
     }
 
@@ -26,15 +22,26 @@ const generateReceiptPDF = async (payment) => {
     doc.pipe(writeStream);
 
     try {
-      // Fetch the image from the URL
-      const response = await axios.get('https://rent-wave.vercel.app/assets/logo-D2c4he43.png', { responseType: 'arraybuffer' });
+      // Load the RentWave logo from URL
+      const logoUrl = 'https://rent-wave.vercel.app/assets/logo-D2c4he43.png';
+      const response = await axios.get(logoUrl, { responseType: 'arraybuffer' });
       const logoBuffer = Buffer.from(response.data, 'binary');
-
       doc.image(logoBuffer, {
         fit: [100, 100],
         align: 'left',
         valign: 'top'
       });
+
+      // Use the absolute path for the stamp image
+      const stampPath = 'C:/Users/oghen/Desktop/Untitled design.jpg'; // Ensure this path is correct
+      try {
+        doc.image(stampPath, 450, 650, { // Adjust the positioning
+          fit: [100, 100],
+          opacity: 0.3 // Set opacity for watermark effect
+        });
+      } catch (error) {
+        console.error('Error adding watermark image:', error);
+      }
 
       doc.moveDown();
       doc.fontSize(26).font('Helvetica-Bold').text('Payment Receipt', { align: 'center' });
@@ -74,20 +81,15 @@ const generateReceiptPDF = async (payment) => {
 
       doc.end();
 
-      writeStream.on('finish', () => {
-        console.log('PDF generation completed. Receipt path:', receiptPath);
-        resolve(receiptPath);
-      });
-      writeStream.on('error', (error) => {
-        console.error('PDF generation error:', error);
-        reject(error);
-      });
+      writeStream.on('finish', () => resolve(receiptPath));
+      writeStream.on('error', (error) => reject(error));
     } catch (error) {
-      console.error('Error during PDF generation:', error);
       reject(error);
     }
   });
 };
+
+
 
 const processPayment = async ({ amount, paymentMethod }) => {
   // Simulate a payment processing delay
@@ -165,7 +167,8 @@ const payRent = async (req, res) => {
       property: propertyId,
       paymentMethod,
       transactionId,
-      notes
+      notes,
+      status: 'Paid' // Set the payment status to 'Paid'
     });
 
     // Save the payment to the database

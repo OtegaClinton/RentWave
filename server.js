@@ -11,6 +11,7 @@ const propertyRouter = require("./routers/propertyRouter");
 const passwordRouter = require("./routers/passwordRouter");
 const adminRouter = require("./routers/adminRouter");
 const rentDueRouter = require("./routers/dueRentRouter");
+const feedBackRouter = require("./routers/feedBackRouter");
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/api/v1", propertyRouter);
 app.use("/api/v1", passwordRouter);
 app.use("/api/v1", adminRouter);
 app.use("/api/v1", rentDueRouter);
+app.use("/api/v1", feedBackRouter);
 
 
 
@@ -39,8 +41,15 @@ app.use((err, req, res, next) => {
         // Handle JSON parsing error
         return res.status(400).json({ error: 'Invalid JSON' });
     } else if (err instanceof multer.MulterError) {
-        // Handle Multer file upload errors
-        return res.status(400).json({ message: err.message });
+        // Handle specific Multer file upload errors
+        switch (err.code) {
+            case 'LIMIT_FILE_COUNT':
+                return res.status(400).json({ message: 'You can only upload a maximum of 3 files.' });
+            case 'LIMIT_FILE_SIZE':
+                return res.status(400).json({ message: 'File size exceeds the 5MB limit.' });
+            default:
+                return res.status(400).json({ message: err.message });
+        }
     } else if (err) {
         // Handle other unknown errors
         return res.status(500).json({ message: err.message });

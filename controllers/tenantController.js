@@ -8,6 +8,10 @@ const jwt = require('jsonwebtoken');
 const fileSystem = require("fs");
 const sendMail=require("../helpers/email");
 const mongoose = require('mongoose');
+const path = require('path');
+const axios = require('axios');
+// const fs = require('fs');
+const fs = require('fs').promises; 
 
 
 
@@ -677,114 +681,349 @@ exports.changePassword = async (req, res) => {
 
 
 
-exports.createMaintenanceRequest = async (req, res) => {
-  try {
-    const tenantId = req.user.id; // Assuming `req.user.id` is set by authentication middleware
+// exports.createMaintenanceRequest = async (req, res) => {
+//   try {
+//     const tenantId = req.user.id; // Assuming `req.user.id` is set by authentication middleware
 
-    // Validate tenant existence
-    const tenant = await tenantModel.findById(tenantId).populate('property');
-    if (!tenant) {
-      return res.status(404).json({ message: "Tenant not found." });
-    }
+//     // Validate tenant existence
+//     const tenant = await tenantModel.findById(tenantId).populate('property');
+//     if (!tenant) {
+//       return res.status(404).json({ message: "Tenant not found." });
+//     }
 
-    // Extract fields from the request body
-    const { requestFor, additionalInfo, availableDates } = req.body;
+//     // Extract fields from the request body
+//     const { requestFor, additionalInfo, availableDates } = req.body;
 
-    // Validate required fields
-    if (!requestFor || typeof requestFor !== 'string' || requestFor.trim().length < 5) {
-      return res.status(400).json({
-        message: 'Request description must be a valid string with at least 5 characters.'
-      });
-    }
+//     // Validate required fields
+//     if (!requestFor || typeof requestFor !== 'string' || requestFor.trim().length < 5) {
+//       return res.status(400).json({
+//         message: 'Request description must be a valid string with at least 5 characters.'
+//       });
+//     }
 
-    if (!availableDates || !Array.isArray(availableDates) || availableDates.length !== 3) {
-      return res.status(400).json({
-        message: 'Please provide exactly three dates for availability.'
-      });
-    }
+//     if (!availableDates || !Array.isArray(availableDates) || availableDates.length !== 3) {
+//       return res.status(400).json({
+//         message: 'Please provide exactly three dates for availability.'
+//       });
+//     }
 
-    // Validate each available date object (date and time)
-    for (const dateObj of availableDates) {
-      if (!dateObj.date || !dateObj.time) {
-        return res.status(400).json({
-          message: 'Each available date must include both date and time.'
-        });
-      }
+//     // Validate each available date object (date and time)
+//     for (const dateObj of availableDates) {
+//       if (!dateObj.date || !dateObj.time) {
+//         return res.status(400).json({
+//           message: 'Each available date must include both date and time.'
+//         });
+//       }
       
-      // Validate time format (HH:mm)
-      const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
-      if (!timeRegex.test(dateObj.time)) {
-        return res.status(400).json({
-          message: 'Each time must be in the format HH:mm.'
-        });
-      }
-    }
+//       // Validate time format (HH:mm)
+//       const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
+//       if (!timeRegex.test(dateObj.time)) {
+//         return res.status(400).json({
+//           message: 'Each time must be in the format HH:mm.'
+//         });
+//       }
+//     }
 
-    // Use the tenant's phone number directly
-    const phoneNumber = tenant.phoneNumber;
+//     // Use the tenant's phone number directly
+//     const phoneNumber = tenant.phoneNumber;
 
-    // Handle picture uploads, if any
-    let pictures = [];
-    const uploadedFiles = []; // To keep track of uploaded files for deletion
+//     // Handle picture uploads, if any
+//     let pictures = [];
+//     const uploadedFiles = []; // To keep track of uploaded files for deletion
 
-    if (req.files && req.files.length > 0) {
-      try {
-        for (const file of req.files) {
-          const result = await cloudinary.uploader.upload(file.path, {
-            folder: 'maintenance_request_pictures'
-          });
-          pictures.push({
-            pictureId: result.public_id,
-            pictureUrl: result.secure_url
-          });
-          uploadedFiles.push(file.path); // Track the uploaded file paths
+//     if (req.files && req.files.length > 0) {
+//       try {
+//         for (const file of req.files) {
+//           const result = await cloudinary.uploader.upload(file.path, {
+//             folder: 'maintenance_request_pictures'
+//           });
+//           pictures.push({
+//             pictureId: result.public_id,
+//             pictureUrl: result.secure_url
+//           });
+//           uploadedFiles.push(file.path); // Track the uploaded file paths
+//         }
+//       } catch (uploadError) {
+//         // Clean up uploaded files if there's an error
+//         uploadedFiles.forEach(filePath => {
+//           fileSystem.unlink(filePath, (error) => {
+//             if (error) {
+//               console.error(`Error deleting file from server: ${filePath}`, error.message);
+//             }
+//           });
+//         });
+
+//         return res.status(400).json({
+//           message: "Error uploading pictures.",
+//           error: uploadError.message
+//         });
+//       }
+//     }
+
+//     // Create a new maintenance request
+//     const newMaintenanceRequest = new maintenanceModel({
+//       tenant: tenantId,
+//       property: tenant.property,
+//       requestFor: requestFor.trim(),
+//       additionalInfo: additionalInfo ? additionalInfo.trim() : '',
+//       availableDates, // now includes both date and time
+//       phoneNumber,
+//       pictures
+//     });
+
+//     await newMaintenanceRequest.save();
+
+//     // Find landlord's email
+//     const landlord = await userModel.findById(tenant.landlord);
+//     if (!landlord) {
+//       return res.status(404).json({ message: 'Landlord not found' });
+//     }
+
+//     // Check if landlord email exists
+//     if (!landlord.email) {
+//       return res.status(400).json({ message: 'Landlord does not have a registered email address' });
+//     }
+
+//     // Format available dates with time
+//     const formattedDates = availableDates.map(dateObj => `${new Date(dateObj.date).toLocaleDateString()} at ${dateObj.time}`);
+
+//     // Compose email content
+//     const emailContent = `<!DOCTYPE html>
+// <html>
+// <head>
+//     <meta charset="UTF-8">
+//     <title>Maintenance Request Notification - RentWave</title>
+//     <style>
+//         body {
+//             font-family: Arial, sans-serif;
+//             line-height: 1.6;
+//             color: #333333;
+//             background-color: #f0f4f8; /* Light background for contrast */
+//             margin: 0;
+//             padding: 0;
+//         }
+//         .container {
+//             width: 80%;
+//             margin: 20px auto;
+//             padding: 20px;
+//             border: 1px solid #d0dbe1;
+//             border-radius: 10px;
+//             box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+//             background-color: #ffff; /* Clean white background */
+//         }
+//         .header {
+//             background: #5F92DF; /* Royal Blue */
+//             padding: 15px;
+//             display: flex;
+//             align-items: center; /* Align items vertically */
+//             justify-content: center; /* Center content horizontally */
+//             position: relative; /* Allows positioning of the logo */
+//             border-bottom: 2px solid #5F92DF; /* Darker shade of Royal Blue */
+//             color: #f4f4f4;
+//             border-radius: 10px 10px 0 0; /* Rounded top corners */
+//         }
+//         .header img {
+//             width: 120px;
+//             height: 100px;
+//             object-fit: contain;
+//             position: absolute;
+//             left: 15px; /* Position logo on the left */
+//         }
+//         .content {
+//             padding: 20px;
+//             color: #333333;
+//         }
+//         .footer {
+//             background: #5F92DF; /* Darker shade of Royal Blue */
+//             padding: 15px;
+//             text-align: center;
+//             border-top: 2px solid #5F92DF; /* Royal Blue */
+//             font-size: 0.9em;
+//             color: #f4f4f4;
+//             border-radius: 0 0 10px 10px; /* Rounded bottom corners */
+//         }
+//     </style>
+// </head>
+// <body>
+//     <div class="container">
+//         <div class="header">
+//             <img src="https://rent-wave.vercel.app/assets/logo-D2c4he43.png" alt="RentWave Logo">
+//             <h1>Maintenance Request Notification</h1>
+//         </div>
+//         <div class="content">
+//             <p>Dear ${landlord.firstName} ${landlord.lastName},</p>
+//             <p>A maintenance request has been submitted for the property you manage.</p>
+//             <p><strong>Request Description:</strong> ${requestFor}</p>
+//             <p><strong>Additional Information:</strong> ${additionalInfo || 'None'}</p>
+//             <p><strong>Available Dates:</strong> ${formattedDates.join(', ')}</p>
+//             <p><strong>Phone Number:</strong> ${phoneNumber}</p>
+//             <p>Please review the request and take appropriate action.</p>
+//             <p>Best regards,<br>Your Property Management System,<br>RentWave</p>
+//         </div>
+//         <div class="footer">
+//             <p>&copy; ${new Date().getFullYear()} RentWave. All rights reserved.</p>
+//         </div>
+//     </div>
+// </body>
+// </html>
+// `;
+
+//     // Log email content for debugging
+//     console.log('Sending email to:', landlord.email);
+//     console.log('Email content:', emailContent);
+
+//     // Send email to landlord
+//     await sendMail({
+//       to: landlord.email,
+//       subject: 'New Maintenance Request Submitted',
+//       html: emailContent
+//     });
+
+//     res.status(201).json({
+//       message: 'Maintenance request created successfully and email sent to landlord.',
+//       maintenanceRequest: newMaintenanceRequest
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       message: 'Error creating maintenance request.',
+//       error: error.message
+//     });
+//   }
+// };
+
+
+
+
+
+const downloadImage = async (url, filePath) => {
+  const writer = fs.createWriteStream(filePath);
+  const response = await axios({
+    url,
+    method: 'GET',
+    responseType: 'stream'
+  });
+  response.data.pipe(writer);
+  return new Promise((resolve, reject) => {
+    writer.on('finish', resolve);
+    writer.on('error', reject);
+  });
+};
+
+
+
+
+
+exports.createMaintenanceRequest = async (req, res) => {
+    try {
+        const tenantId = req.user.id; // Assuming `req.user.id` is set by authentication middleware
+
+        // Validate tenant existence
+        const tenant = await tenantModel.findById(tenantId).populate('property');
+        if (!tenant) {
+            return res.status(404).json({ message: "Tenant not found." });
         }
-      } catch (uploadError) {
-        // Clean up uploaded files if there's an error
-        uploadedFiles.forEach(filePath => {
-          fileSystem.unlink(filePath, (error) => {
-            if (error) {
-              console.error(`Error deleting file from server: ${filePath}`, error.message);
+
+        // Extract fields from the request body
+        const { requestFor, additionalInfo, availableDates } = req.body;
+
+        // Validate required fields
+        if (!requestFor || typeof requestFor !== 'string' || requestFor.trim().length < 5) {
+            return res.status(400).json({
+                message: 'Request description must be a valid string with at least 5 characters.'
+            });
+        }
+
+        if (!availableDates || !Array.isArray(availableDates) || availableDates.length !== 3) {
+            return res.status(400).json({
+                message: 'Please provide exactly three dates for availability.'
+            });
+        }
+
+        // Validate each available date object (date and time)
+        for (const dateObj of availableDates) {
+            if (!dateObj.date || !dateObj.time) {
+                return res.status(400).json({
+                    message: 'Each available date must include both date and time.'
+                });
             }
-          });
+
+            // Validate time format (HH:mm)
+            const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
+            if (!timeRegex.test(dateObj.time)) {
+                return res.status(400).json({
+                    message: 'Each time must be in the format HH:mm.'
+                });
+            }
+        }
+
+        // Use the tenant's phone number directly
+        const phoneNumber = tenant.phoneNumber;
+
+        // Handle picture uploads, if any
+        let pictures = [];
+        const imageUrls = [];
+        const maxImages = 3;
+        const attachmentFiles = [];
+
+        // If files are uploaded
+        if (req.files && Array.isArray(req.files)) {
+            if (req.files.length > maxImages) {
+                return res.status(400).json({ message: `You can upload a maximum of ${maxImages} images.` });
+            }
+
+            try {
+                for (const file of req.files) {
+                    const result = await cloudinary.uploader.upload(file.path, {
+                        folder: 'maintenance_request_pictures'
+                    });
+                    pictures.push({
+                        pictureId: result.public_id,
+                        pictureUrl: result.secure_url
+                    });
+                    imageUrls.push(result.secure_url); // Store URLs for downloading
+
+                    // Prepare local file for attachment
+                    attachmentFiles.push({
+                        filename: path.basename(file.path),
+                        path: file.path
+                    });
+                }
+            } catch (uploadError) {
+                return res.status(400).json({
+                    message: "Error uploading pictures.",
+                    error: uploadError.message
+                });
+            }
+        }
+
+        // Create a new maintenance request
+        const newMaintenanceRequest = new maintenanceModel({
+            tenant: tenantId,
+            property: tenant.property,
+            requestFor: requestFor.trim(),
+            additionalInfo: additionalInfo ? additionalInfo.trim() : '',
+            availableDates,
+            phoneNumber,
+            pictures
         });
 
-        return res.status(400).json({
-          message: "Error uploading pictures.",
-          error: uploadError.message
-        });
-      }
-    }
+        await newMaintenanceRequest.save();
 
-    // Create a new maintenance request
-    const newMaintenanceRequest = new maintenanceModel({
-      tenant: tenantId,
-      property: tenant.property,
-      requestFor: requestFor.trim(),
-      additionalInfo: additionalInfo ? additionalInfo.trim() : '',
-      availableDates, // now includes both date and time
-      phoneNumber,
-      pictures
-    });
+        // Find landlord's email
+        const landlord = await userModel.findById(tenant.landlord);
+        if (!landlord) {
+            return res.status(404).json({ message: 'Landlord not found' });
+        }
 
-    await newMaintenanceRequest.save();
+        if (!landlord.email) {
+            return res.status(400).json({ message: 'Landlord does not have a registered email address' });
+        }
 
-    // Find landlord's email
-    const landlord = await userModel.findById(tenant.landlord);
-    if (!landlord) {
-      return res.status(404).json({ message: 'Landlord not found' });
-    }
+        // Format available dates with time
+        const formattedDates = availableDates.map(dateObj => `${new Date(dateObj.date).toLocaleDateString()} at ${dateObj.time}`);
 
-    // Check if landlord email exists
-    if (!landlord.email) {
-      return res.status(400).json({ message: 'Landlord does not have a registered email address' });
-    }
-
-    // Format available dates with time
-    const formattedDates = availableDates.map(dateObj => `${new Date(dateObj.date).toLocaleDateString()} at ${dateObj.time}`);
-
-    // Compose email content
-    const emailContent = `<!DOCTYPE html>
+        // Compose email content
+        const emailContent = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -794,7 +1033,7 @@ exports.createMaintenanceRequest = async (req, res) => {
             font-family: Arial, sans-serif;
             line-height: 1.6;
             color: #333333;
-            background-color: #f0f4f8; /* Light background for contrast */
+            background-color: #f0f4f8;
             margin: 0;
             padding: 0;
         }
@@ -805,38 +1044,38 @@ exports.createMaintenanceRequest = async (req, res) => {
             border: 1px solid #d0dbe1;
             border-radius: 10px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-            background-color: #ffff; /* Clean white background */
+            background-color: #ffff;
         }
         .header {
-            background: #5F92DF; /* Royal Blue */
+            background: #5F92DF;
             padding: 15px;
             display: flex;
-            align-items: center; /* Align items vertically */
-            justify-content: center; /* Center content horizontally */
-            position: relative; /* Allows positioning of the logo */
-            border-bottom: 2px solid #5F92DF; /* Darker shade of Royal Blue */
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-bottom: 2px solid #5F92DF;
             color: #f4f4f4;
-            border-radius: 10px 10px 0 0; /* Rounded top corners */
+            border-radius: 10px 10px 0 0;
         }
         .header img {
             width: 120px;
             height: 100px;
             object-fit: contain;
             position: absolute;
-            left: 15px; /* Position logo on the left */
+            left: 15px;
         }
         .content {
             padding: 20px;
             color: #333333;
         }
         .footer {
-            background: #5F92DF; /* Darker shade of Royal Blue */
+            background: #5F92DF;
             padding: 15px;
             text-align: center;
-            border-top: 2px solid #5F92DF; /* Royal Blue */
+            border-top: 2px solid #5F92DF;
             font-size: 0.9em;
             color: #f4f4f4;
-            border-radius: 0 0 10px 10px; /* Rounded bottom corners */
+            border-radius: 0 0 10px 10px;
         }
     </style>
 </head>
@@ -864,32 +1103,35 @@ exports.createMaintenanceRequest = async (req, res) => {
 </html>
 `;
 
-    // Log email content for debugging
-    console.log('Sending email to:', landlord.email);
-    console.log('Email content:', emailContent);
+        console.log('Sending email to:', landlord.email);
+        console.log('Email content:', emailContent);
 
-    // Send email to landlord
-    await sendMail({
-      to: landlord.email,
-      subject: 'New Maintenance Request Submitted',
-      html: emailContent
-    });
+        // Send email with attachments
+        await sendMail({
+            to: landlord.email,
+            subject: 'New Maintenance Request Submitted',
+            html: emailContent,
+            attachments: attachmentFiles
+        });
 
-    res.status(201).json({
-      message: 'Maintenance request created successfully and email sent to landlord.',
-      maintenanceRequest: newMaintenanceRequest
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error creating maintenance request.',
-      error: error.message
-    });
-  }
+        // Clean up temporary files after sending email
+        await Promise.all(attachmentFiles.map(async file => {
+            try {
+                await fs.unlink(file.path);
+                console.log(`Successfully deleted temp file: ${file.path}`);
+            } catch (unlinkError) {
+                console.error(`Error deleting temp file: ${file.path}`, unlinkError.message);
+            }
+        }));
+
+        res.status(201).json({
+            message: 'Maintenance request created successfully and email sent to landlord with attachments.',
+            maintenanceRequest: newMaintenanceRequest
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error creating maintenance request.',
+            error: error.message
+        });
+    }
 };
-
-
-
-
-
-
-

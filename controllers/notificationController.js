@@ -1,5 +1,6 @@
 const paymentModel = require('../models/paymentModel');
 const tenantModel = require('../models/tenantModel');
+const userModel = require('../models/userModel');
 const sendMail = require("../helpers/email");
 const mongoose = require('mongoose');
 
@@ -386,6 +387,5 @@ const generateAndSendInvoicesForToday = async () => {
 };
 
 
+module.exports = { notifyDueRent, dueRentReminder, generateAndSendInvoicesForToday };
 
-
-module.exports = {notifyDueRent,dueRentReminder, generateAndSendInvoicesForToday};

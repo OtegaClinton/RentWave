@@ -21,6 +21,7 @@ const {
 
 const {userValidator}= require("../middlewares/userValidator");
 const uploader = require("../helpers/multer");
+const { logOut } = require("../controllers/blacklistController");
 
 
 
@@ -66,6 +67,9 @@ userRouter.get('/tenant/:tenantId',authenticator,getTenantById);
 
 
 userRouter.get('/tenants',authenticator,getAllTenants);
+
+
+userRouter.post('/logout',authenticator,logOut);
 
 module.exports= userRouter;
 

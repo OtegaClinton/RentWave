@@ -317,13 +317,19 @@ exports.logIn = async (req, res) => {
     // Normalize email to lower case
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Check if the user exists
-    const user = await userModel.findOne({ email: normalizedEmail });
+    // Search for the user in tenant and landlord models
+    let user = await tenantModel.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      user = await userModel.findOne({ email: normalizedEmail }); // Searching in landlord/admin model if not found in tenant model
+    }
+
+    // If user not found in both models
     if (!user) {
       return res.status(404).json({ message: 'Invalid email or password.' });
     }
 
-    // Check if user is verified
+    // Check if the user is verified
     if (!user.isVerified) {
       return res.status(403).json({ message: 'Please verify your email to log in.' });
     }
@@ -334,9 +340,14 @@ exports.logIn = async (req, res) => {
       return res.status(400).json({ message: 'Invalid email or password.' });
     }
 
-    // Generate JWT token including the user role
+    // Determine user role (tenant, landlord, admin)
+    let role = user.role;
+    let isAdmin = user.isAdmin || false;
+    let isSuperAdmin = user.isSuperAdmin || false;
+
+    // Generate JWT token including user details
     const token = jwt.sign(
-      { id: user._id, role: user.role, isAdmin: user.isAdmin, isSuperAdmin: user.isSuperAdmin },
+      { id: user._id, role: role, isAdmin: isAdmin, isSuperAdmin: isSuperAdmin },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -352,20 +363,28 @@ exports.logIn = async (req, res) => {
       ...otherDetails
     } = user._doc;
 
-    // Determine the appropriate redirection URL based on role and admin status
-    const redirectUrl = getDashboardUrl(user.role, user.isAdmin, user.isSuperAdmin);
+    // Define route paths based on user role
+    let redirectUrl;
+    if (role === 'tenant') {
+      redirectUrl = '/tenant/dashboard';
+    } else if (role === 'landlord') {
+      redirectUrl = '/landlord/dashboard';
+    } else if (isAdmin || isSuperAdmin) {
+      redirectUrl = '/admin/dashboard';
+    }
 
     res.status(200).json({
       message: 'Login successful.',
       data: otherDetails,
       token: token,
-      redirectUrl: redirectUrl
+      redirectUrl: redirectUrl,
     });
   } catch (error) {
     console.error('Error during login:', error); // Log the error for debugging
     res.status(500).json({ message: 'An unexpected error occurred. Please try again later.' });
   }
 };
+
 
 
 

@@ -17,7 +17,7 @@ const uploader = require("../helpers/multer");
 
 
 tenantRouter.post('/onboardtenant', authenticator, onboardTenant);
-tenantRouter.post('/logintenant', tenantLogin);
+tenantRouter.post('/login', tenantLogin);
 
 tenantRouter.put('/updateprofile', authenticator, uploader.single('profilePicture'), updateTenantProfile);
 

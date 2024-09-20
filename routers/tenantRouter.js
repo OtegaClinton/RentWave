@@ -8,6 +8,8 @@ const {
     addProfilePictureTenant,
     updateProfilePicture,
     createMaintenanceRequest,
+    getAllSingleTenantMaintenanceRequests,
+    getTenantPayments
   
 }= require("../controllers/tenantController");
 const { payRent } = require("../controllers/paymentController")
@@ -36,6 +38,13 @@ tenantRouter.post(
 
   // Route for processing rent payments
 tenantRouter.post('/payRent', authenticator, payRent);
+
+// Route to get all maintenance requests for a single tenant
+tenantRouter.get('/all-maintenance-requests', authenticator, getAllSingleTenantMaintenanceRequests);
+
+// Route to get all payments for a tenant
+tenantRouter.get('/payments', authenticator, getTenantPayments);
+
 
 
 

@@ -24,18 +24,22 @@ const generateReceiptPDF = async (payment) => {
     try {
       // Load the RentWave logo from URL
       const logoUrl = 'https://rent-wave.vercel.app/assets/logo-D2c4he43.png';
-      const response = await axios.get(logoUrl, { responseType: 'arraybuffer' });
-      const logoBuffer = Buffer.from(response.data, 'binary');
+      const logoResponse = await axios.get(logoUrl, { responseType: 'arraybuffer' });
+      const logoBuffer = Buffer.from(logoResponse.data, 'binary');
       doc.image(logoBuffer, {
         fit: [100, 100],
         align: 'left',
         valign: 'top'
       });
 
-      // Use the absolute path for the stamp image
-      const stampPath = 'C:/Users/oghen/Desktop/Untitled design.jpg'; // Ensure this path is correct
+      // Fetch the stamp image from the Cloudinary URL
+      const stampUrl = 'https://res.cloudinary.com/dobng9jwd/image/upload/v1726822949/Untitled_design-removebg-preview_fgtbmg.png';
+      const stampResponse = await axios.get(stampUrl, { responseType: 'arraybuffer' });
+      const stampBuffer = Buffer.from(stampResponse.data, 'binary');
+
+      // Add the stamp as a watermark
       try {
-        doc.image(stampPath, 450, 650, { // Adjust the positioning
+        doc.image(stampBuffer, 450, 650, { // Adjust the positioning
           fit: [100, 100],
           opacity: 0.3 // Set opacity for watermark effect
         });
@@ -90,7 +94,6 @@ const generateReceiptPDF = async (payment) => {
 };
 
 
-
 const processPayment = async ({ amount, paymentMethod }) => {
   // Simulate a payment processing delay
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -138,6 +141,11 @@ const payRent = async (req, res) => {
     if (!tenant || !tenant.property) {
       return res.status(404).json({ message: 'Property not found for this tenant.' });
     }
+
+      // Validate if the provided name matches the tenant's name in the database
+      if (firstName !== tenant.firstName || lastName !== tenant.lastName) {
+        return res.status(400).json({ message: 'The provided name does not match the tenant\'s name.' });
+      }
 
     const property = tenant.property;
     const landlordId = property.listedBy._id; // Assuming the property has a listedBy field

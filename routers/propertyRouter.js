@@ -26,7 +26,7 @@ propertyRouter.post(
 propertyRouter.get('/properties/:id',authenticator, getPropertyById);
 
 // Get all properties
-propertyRouter.get('/properties',authenticator,authorization, getAllProperties);
+propertyRouter.get('/getallproperties',authenticator,authorization, getAllProperties);
 
 // Update a property
 propertyRouter.put(

@@ -11,7 +11,7 @@ const {
   getAllProperties,
   updateProperty,
   deleteProperty,
-  markPropertyAsSoldOrRented
+  getAllPropertiesByLandlord
 } = require('../controllers/propertyController');
 
 // Create a new property
@@ -39,6 +39,9 @@ propertyRouter.put(
 
 // Delete a property
 propertyRouter.delete('/properties/:id', authenticator, authorization, deleteProperty);
+
+// Route to get all properties owned by a particular landlord
+propertyRouter.get('/landlord/properties', authenticator, getAllPropertiesByLandlord);
 
 
 

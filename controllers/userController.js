@@ -175,6 +175,54 @@ exports.signUp = async (req, res) => {
 
 
 
+// exports.verifyEmail = async (req, res) => {
+//   try {
+//     const { id, token } = req.params;
+//     const findUser = await userModel.findById(id);
+
+//     if (!findUser) {
+//       return res.status(404).json({
+//         message: 'User not found'
+//       });
+//     }
+
+//     // Verify the token
+//     jwt.verify(token, process.env.JWT_SECRET, async (error, decoded) => {
+//       if (error) {
+//         const verifyLink = `${req.protocol}://${req.get('host')}/api/v1/newemail/${findUser._id}`;
+//         await sendMail({
+//           subject: 'Kindly Verify your mail',
+//           to: findUser.email,
+//           html: html(verifyLink, findUser.firstName)
+//         });
+//         return res.status(400).json({
+//           message: 'This link has expired, kindly check your email for a new link'
+//         });
+//       }
+
+//       // Check if user is already verified
+//       if (findUser.isVerified) {
+//         return res.status(400).json({
+//           message: 'Your account has already been verified'
+//         });
+//       }
+
+//       // Update the user's verification status
+//       findUser.isVerified = true;
+//       await findUser.save();
+
+//       return res.status(200).json({
+//         message: 'Email verified successfully'
+//       });
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: error.message
+//     });
+//   }
+// };
+
+
 exports.verifyEmail = async (req, res) => {
   try {
     const { id, token } = req.params;
@@ -189,21 +237,23 @@ exports.verifyEmail = async (req, res) => {
     // Verify the token
     jwt.verify(token, process.env.JWT_SECRET, async (error, decoded) => {
       if (error) {
+        // Generate a new verification link and send it via email
         const verifyLink = `${req.protocol}://${req.get('host')}/api/v1/newemail/${findUser._id}`;
         await sendMail({
-          subject: 'Kindly Verify your mail',
+          subject: 'Kindly Verify your email',
           to: findUser.email,
           html: html(verifyLink, findUser.firstName)
         });
+
         return res.status(400).json({
-          message: 'This link has expired, kindly check your email for a new link'
+          message: 'This link has expired. Kindly check your email for a new verification link.'
         });
       }
 
       // Check if user is already verified
       if (findUser.isVerified) {
         return res.status(400).json({
-          message: 'Your account has already been verified'
+          message: 'Your account is already verified.'
         });
       }
 
@@ -211,9 +261,8 @@ exports.verifyEmail = async (req, res) => {
       findUser.isVerified = true;
       await findUser.save();
 
-      return res.status(200).json({
-        message: 'Email verified successfully'
-      });
+      // Redirect to the login page after successful verification
+      return res.redirect(`${req.protocol}://${req.get('host')}/login`);
     });
   } catch (error) {
     return res.status(500).json({

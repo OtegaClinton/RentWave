@@ -38,13 +38,13 @@ userRouter.post('/newemail', newEmail);
 userRouter.post('/login', logIn);
 
 // Update user details
-userRouter.put('/update',authenticator, uploader.single('profilePicture'), updateUser);
+userRouter.put('/update-landlord-profile',authenticator, uploader.single('profilePicture'), updateUser);
 
 // Update profile picture
-userRouter.post('/updatepicture', authenticator, uploader.single('profilePicture'), uploadProfilePicture);
+userRouter.post('/update-landlord-picture', authenticator, uploader.single('profilePicture'), uploadProfilePicture);
 
 // Delete user
-userRouter.delete('/delete/:id', authenticator,authorization, authorizationSuper, deleteUser);
+userRouter.delete('/deletelandlord/:id', authenticator,authorization, authorizationSuper, deleteUser);
 
 // Get a single user by ID
 userRouter.get('/user/:id', authenticator, getUserById);
@@ -53,7 +53,7 @@ userRouter.get('/user/:id', authenticator, getUserById);
 userRouter.get('/users',authenticator,authorization,authorizationSuper, getAllUsers);
 
 // DELETE /api/v1/tenants/:tenantId - Delete tenant by ID
-userRouter.delete('/tenants/:tenantId',authenticator, deleteTenant);
+userRouter.delete('/deletetenant/:tenantId',authenticator, deleteTenant);
 
 
 userRouter.patch('/maintenance/:requestId',authenticator,updateMaintenanceStatus);

@@ -4,6 +4,8 @@ const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 require("./controllers/scheduler");
+const keepServerAlive = require("./keepServerAlive");
+
 
 const userRouter = require("./routers/userRouter");
 const tenantRouter = require("./routers/tenantRouter");
@@ -12,6 +14,7 @@ const passwordRouter = require("./routers/passwordRouter");
 const adminRouter = require("./routers/adminRouter");
 const rentDueRouter = require("./routers/dueRentRouter");
 const feedBackRouter = require("./routers/feedBackRouter");
+
 
 const app = express();
 
@@ -56,6 +59,15 @@ app.use((err, req, res, next) => {
     }
 
     next();
+});
+
+// Call keepServerAlive to keep the server active
+keepServerAlive();
+
+
+// Test route to check server status
+app.get('/1', (req, res) => {
+    res.send('Server is alive!');
 });
 
 // Start the server

@@ -316,7 +316,7 @@ exports.verifyEmail = async (req, res) => {
                 </div>
                 <div class="content">
                     <p>Congratulations, ${findUser.firstName}! Your email has been successfully verified.</p>
-                    <p>You will be redirected to the login page in <span id="countdown">3</span> seconds.</p>
+                    <p>You will be redirected to the login page in <span id="countdown">10</span> seconds.</p>
                 </div>
                 <div class="footer">
                     <p>&copy; ${new Date().getFullYear()} RentWave. All rights reserved.</p>
@@ -324,7 +324,7 @@ exports.verifyEmail = async (req, res) => {
             </div>
 
             <script>
-                let countdown = 3;
+                let countdown = 10;
                 const countdownElement = document.getElementById('countdown');
                 const redirectUrl = "${redirectUrl}";
 

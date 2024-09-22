@@ -237,23 +237,21 @@ exports.verifyEmail = async (req, res) => {
     // Verify the token
     jwt.verify(token, process.env.JWT_SECRET, async (error, decoded) => {
       if (error) {
-        // Generate a new verification link and send it via email
         const verifyLink = `${req.protocol}://${req.get('host')}/api/v1/newemail/${findUser._id}`;
         await sendMail({
-          subject: 'Kindly Verify your email',
+          subject: 'Kindly Verify your mail',
           to: findUser.email,
           html: html(verifyLink, findUser.firstName)
         });
-
         return res.status(400).json({
-          message: 'This link has expired. Kindly check your email for a new verification link.'
+          message: 'This link has expired, kindly check your email for a new link'
         });
       }
 
       // Check if user is already verified
       if (findUser.isVerified) {
         return res.status(400).json({
-          message: 'Your account is already verified.'
+          message: 'Your account has already been verified'
         });
       }
 
@@ -261,8 +259,89 @@ exports.verifyEmail = async (req, res) => {
       findUser.isVerified = true;
       await findUser.save();
 
-      // Redirect to the login page after successful verification
-      return res.redirect(`${req.protocol}://${req.get('host')}/login`);
+      // Return the verification success HTML with a countdown and redirect
+      const redirectUrl = 'https://rent-wave.vercel.app/#/Login';
+      const htmlTemplate = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Email Verified - RentWave</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f0f4f8;
+                    color: #333;
+                    margin: 0;
+                    padding: 0;
+                }
+                .container {
+                    width: 80%;
+                    margin: 40px auto;
+                    padding: 20px;
+                    text-align: center;
+                    border: 1px solid #d0dbe1;
+                    border-radius: 10px;
+                    background-color: #f4f4f4;
+                    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+                }
+                .header {
+                    background-color: #5F92DF;
+                    padding: 20px;
+                    color: white;
+                    border-radius: 10px 10px 0 0;
+                }
+                .header h1 {
+                    margin: 0;
+                }
+                .content {
+                    padding: 20px;
+                    color: #333;
+                }
+                .footer {
+                    margin-top: 20px;
+                    padding: 10px;
+                    background-color: #5F92DF;
+                    color: white;
+                    border-radius: 0 0 10px 10px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Verification Successful!</h1>
+                </div>
+                <div class="content">
+                    <p>Congratulations, ${findUser.firstName}! Your email has been successfully verified.</p>
+                    <p>You will be redirected to the login page in <span id="countdown">3</span> seconds.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; ${new Date().getFullYear()} RentWave. All rights reserved.</p>
+                </div>
+            </div>
+
+            <script>
+                let countdown = 3;
+                const countdownElement = document.getElementById('countdown');
+                const redirectUrl = "${redirectUrl}";
+
+                setInterval(() => {
+                    if (countdown > 0) {
+                        countdown--;
+                        countdownElement.textContent = countdown;
+                    } else {
+                        window.location.href = redirectUrl;
+                    }
+                }, 1000);
+            </script>
+        </body>
+        </html>
+      `;
+
+      res.status(200).send(htmlTemplate);
     });
   } catch (error) {
     return res.status(500).json({
@@ -270,6 +349,7 @@ exports.verifyEmail = async (req, res) => {
     });
   }
 };
+
 
 
 

@@ -10,6 +10,9 @@ const {html,reverifyHtml} = require("../helpers/html");
 const cloudinary = require("../helpers/cloudinary");
 const fileSystem = require("fs");
 const { unlink } = require('fs/promises');
+const path = require('path');
+
+
 
 exports.signUp = async (req, res) => {
   try {
@@ -143,15 +146,21 @@ exports.signUp = async (req, res) => {
       html: html(verifyLink, newUser.firstName)
     });
 
-    res.status(201).json({
-      message: `Welcome ${newUser.firstName}, kindly check your email to verify your account.`,
-      data: {
-        id: newUser._id,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        email: newUser.email,
-      }
-    });
+    // res.status(201).json({
+    //   message: `Welcome ${newUser.firstName}, kindly check your email to verify your account.`,
+    //   data: {
+    //     id: newUser._id,
+    //     firstName: newUser.firstName,
+    //     lastName: newUser.lastName,
+    //     email: newUser.email,
+    //   }
+    // });
+
+    // After successful sign-up, serve the verify email page
+    res.status(201).sendFile(path.join(__dirname, '../public/verify.html'));
+
+
+
   } catch (error) {
     console.error('Error during sign-up:', error);
     
@@ -993,3 +1002,48 @@ exports.getAllTenants = async (req, res) => {
     });
   }
 };
+
+
+
+
+ exports.getAllTenantPayments = async (req, res) => {
+  try {
+    const landlordId = req.user.id; // Get the landlord ID from the token
+
+    // Step 1: Find properties owned by the landlord
+    const properties = await propertyModel.find({ listedBy: landlordId });
+
+    if (!properties || properties.length === 0) {
+      return res.status(404).json({ message: 'No properties found for this landlord' });
+    }
+
+    // Step 2: Extract property IDs
+    const propertyIds = properties.map((property) => property._id);
+
+    // Step 3: Find tenants renting those properties
+    const tenants = await tenantModel.find({ property: { $in: propertyIds } });
+
+    if (!tenants || tenants.length === 0) {
+      return res.status(404).json({ message: 'No tenants found for this landlord\'s properties' });
+    }
+
+    // Step 4: Extract tenant IDs
+    const tenantIds = tenants.map((tenant) => tenant._id);
+
+    // Step 5: Find payments made by those tenants
+    const payments = await paymentModel.find({ tenant: { $in: tenantIds } });
+
+    if (!payments || payments.length === 0) {
+      return res.status(404).json({ message: 'No payments found for tenants of this landlord' });
+    }
+
+    // Send the payments as a response
+    res.status(200).json({ payments });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+

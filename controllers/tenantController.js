@@ -228,6 +228,11 @@ exports.onboardTenant = async (req, res) => {
             <p><strong>Email:</strong> ${email}</p>
             <p><strong>Password:</strong> ${password}</p>
             <p>For your security, please change your password upon your first login to keep your account secure.</p>
+            
+            <p>
+                <a href="https://rent-wave.vercel.app/#/Login" class="button">Login to RentWave</a>
+            </p>
+            
             <p>If you have any questions or need assistance, our support team is here to help you at any time.</p>
             <p>Thank you for choosing RentWave. We look forward to making your rental experience smooth and enjoyable.</p>
             <p>Best regards,<br>RentWave Team</p>
@@ -238,6 +243,7 @@ exports.onboardTenant = async (req, res) => {
     </div>
 </body>
 </html>
+
 `,
     };
 

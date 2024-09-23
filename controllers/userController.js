@@ -2,6 +2,7 @@ const userModel = require("../models/userModel");
 const propertyModel = require("../models/propertyModel");
 const tenantModel = require('../models/tenantModel'); 
 const maintenanceModel = require('../models/maintenanceModel'); 
+const paymentModel = require("../models/paymentModel");
 const mongoose = require("mongoose");
 const bcrypt = require('bcryptjs');
 const jwt =require("jsonwebtoken");

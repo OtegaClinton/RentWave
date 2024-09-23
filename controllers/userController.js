@@ -175,8 +175,9 @@ exports.signUp = async (req, res) => {
             padding: 0;
         }
         .container {
-            width: 80%;
-            margin: 40px auto;
+            width: 50%; /* Reduced width */
+            max-width: 600px; /* Set max width for responsiveness */
+            margin: 40px auto; /* Centered horizontally */
             padding: 20px;
             text-align: center;
             border: 1px solid #d0dbe1;
@@ -248,11 +249,11 @@ exports.signUp = async (req, res) => {
     </script>
 </body>
 </html>
-
-    `;
+       `;
 
     // Send the HTML response to the user
-    res.status(201).send(htmlTemplate);
+    res.status(201).set('Content-Type', 'text/html').send(htmlTemplate);
+
 
 
   } catch (error) {

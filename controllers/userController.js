@@ -817,7 +817,7 @@ exports.logIn = async (req, res) => {
 
     // If user not found in both models
     if (!user) {
-      return res.status(404).json({ message: 'Invalid email or password.' });
+      return res.status(404).json({ message: 'User not found.' });
     }
 
     // Check if the user is verified

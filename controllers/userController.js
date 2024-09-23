@@ -249,17 +249,17 @@ exports.verifyEmail = async (req, res) => {
       }
 
       // Check if user is already verified
-      if (findUser.isVerified) {
-        return res.status(400).json({
-          message: 'Your account has already been verified'
-        });
+      const message = findUser.isVerified
+        ? 'Your account has already been verified.'
+        : 'Congratulations, your email has been successfully verified!';
+
+      // Update the user's verification status if not verified
+      if (!findUser.isVerified) {
+        findUser.isVerified = true;
+        await findUser.save();
       }
 
-      // Update the user's verification status
-      findUser.isVerified = true;
-      await findUser.save();
-
-      // Return the verification success HTML with a countdown and redirect
+      // Return the verification status HTML with a countdown and redirect
       const redirectUrl = 'https://rent-wave.vercel.app/#/Login';
       const htmlTemplate = `
         <!DOCTYPE html>
@@ -268,7 +268,7 @@ exports.verifyEmail = async (req, res) => {
             <meta charset="UTF-8">
             <meta http-equiv="X-UA-Compatible" content="IE=edge">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Email Verified - RentWave</title>
+            <title>Email Verification - RentWave</title>
             <style>
                 body {
                     font-family: Arial, sans-serif;
@@ -312,10 +312,10 @@ exports.verifyEmail = async (req, res) => {
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>Verification Successful!</h1>
+                    <h1>Email Verification</h1>
                 </div>
                 <div class="content">
-                    <p>Congratulations, ${findUser.firstName}! Your email has been successfully verified.</p>
+                    <p>${message}</p>
                     <p>You will be redirected to the login page in <span id="countdown">10</span> seconds.</p>
                 </div>
                 <div class="footer">

@@ -15,6 +15,269 @@ const path = require('path');
 
 
 
+// exports.signUp = async (req, res) => {
+//   try {
+//     let {
+//       firstName = '',
+//       lastName = '',
+//       email = '',
+//       password = '',
+//       confirmPassword = '',
+//       phoneNumber = ''
+//     } = req.body;
+
+//     // Check for missing or empty fields
+//     if (!firstName.trim()) {
+//       return res.status(400).json({ message: 'First name is required.' });
+//     }
+//     if (!lastName.trim()) {
+//       return res.status(400).json({ message: 'Last name is required.' });
+//     }
+//     if (!email.trim()) {
+//       return res.status(400).json({ message: 'Email is required.' });
+//     }
+//     if (!password) {
+//       return res.status(400).json({ message: 'Password is required.' });
+//     }
+//     if (!confirmPassword) {
+//       return res.status(400).json({ message: 'Confirm password is required.' });
+//     }
+//     if (!phoneNumber.trim()) {
+//       return res.status(400).json({ message: 'Phone number is required.' });
+//     }
+
+//     // Trim and sanitize input
+//     firstName = firstName.trim();
+//     lastName = lastName.trim();
+//     email = email.trim().toLowerCase();
+//     phoneNumber = phoneNumber.trim();
+
+//     console.log('Trimmed Values:', { firstName, lastName, email, phoneNumber });
+
+//     // Define regex patterns
+//     const consecutiveSymbolsPattern = /([!@#$%^&*()_+={}\[\]:;"'<>,.?/\\-])\1{2,}/;
+//     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+//     const phoneNumberPattern = /^\d{11}$/;
+//     const passwordPattern = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+={}\[\]:;"'<>,.?/\\-]).{6,}$/;
+
+//     // Check for consecutive symbols in all inputs
+//     if (consecutiveSymbolsPattern.test(firstName)) {
+//       return res.status(400).json({ message: 'First name contains consecutive symbols. Please avoid repeating special characters.' });
+//     }
+//     if (consecutiveSymbolsPattern.test(lastName)) {
+//       return res.status(400).json({ message: 'Last name contains consecutive symbols. Please avoid repeating special characters.' });
+//     }
+//     if (consecutiveSymbolsPattern.test(email)) {
+//       return res.status(400).json({ message: 'Email contains consecutive symbols. Please avoid repeating special characters.' });
+//     }
+//     if (consecutiveSymbolsPattern.test(password)) {
+//       return res.status(400).json({ message: 'Password contains consecutive symbols. Please avoid repeating special characters.' });
+//     }
+//     if (consecutiveSymbolsPattern.test(confirmPassword)) {
+//       return res.status(400).json({ message: 'Confirm password contains consecutive symbols. Please avoid repeating special characters.' });
+//     }
+//     if (consecutiveSymbolsPattern.test(phoneNumber)) {
+//       return res.status(400).json({ message: 'Phone number contains consecutive symbols. Please enter only digits.' });
+//     }
+
+//     // Validate input lengths and patterns
+//     if (firstName.length < 3) {
+//       return res.status(400).json({ message: 'First name must be at least 3 characters long.' });
+//     }
+//     if (lastName.length < 3) {
+//       return res.status(400).json({ message: 'Last name must be at least 3 characters long.' });
+//     }
+//     if (!emailPattern.test(email)) {
+//       return res.status(400).json({ message: 'Invalid email format. Please provide a valid email address.' });
+//     }
+//     if (!passwordPattern.test(password)) {
+//       return res.status(400).json({ message: 'Password must be at least 6 characters long, contain at least one uppercase letter, and one special character.' });
+//     }
+//     if (password !== confirmPassword) {
+//       return res.status(400).json({ message: 'Passwords do not match. Please ensure both password fields match.' });
+//     }
+//     if (!phoneNumberPattern.test(phoneNumber)) {
+//       return res.status(400).json({ message: 'Phone number must be exactly 11 digits long.' });
+//     }
+
+//     // Check if the user already exists
+//     const existingUser = await userModel.findOne({
+//       $or: [{ email }, { phoneNumber }]
+//     });
+
+//     if (existingUser) {
+//       if (existingUser.email === email) {
+//         return res.status(400).json({ message: 'The email address is already in use. Please use a different email address.' });
+//       }
+//       if (existingUser.phoneNumber === phoneNumber) {
+//         return res.status(400).json({ message: 'The phone number is already in use. Please use a different phone number.' });
+//       }
+//     }
+
+//     // Hash the password
+//     const salt = await bcrypt.genSalt(10);
+//     const hashedPassword = await bcrypt.hash(password, salt);
+
+//     // Create a new user
+//     const newUser = new userModel({
+//       firstName,
+//       lastName,
+//       email,
+//       password: hashedPassword,
+//       phoneNumber
+//     });
+
+//     // Save the user to the database
+//     await newUser.save();
+
+//     // Generate a JWT token
+//     const userToken = jwt.sign(
+//       { id: newUser._id, email: newUser.email, firstName: newUser.firstName },
+//       process.env.JWT_SECRET,
+//       { expiresIn: '24h' }
+//     );
+
+//     // Construct the verification link
+//     const verifyLink = `${req.protocol}://${req.get('host')}/api/v1/verify/${newUser._id}/${userToken}`;
+
+//     // Send verification email
+//     await sendMail({
+//       subject: 'Kindly verify your email.',
+//       to: newUser.email,
+//       html: html(verifyLink, newUser.firstName)
+//     });
+
+//     // res.status(201).json({
+//     //   message: `Welcome ${newUser.firstName}, kindly check your email to verify your account.`,
+//     //   data: {
+//     //     id: newUser._id,
+//     //     firstName: newUser.firstName,
+//     //     lastName: newUser.lastName,
+//     //     email: newUser.email,
+//     //   }
+//     // });
+
+//     // Serve the "Check your email" page with a countdown to redirect to homepage
+//     const redirectUrl = 'https://rent-wave.vercel.app/#/';
+//     const htmlTemplate = `
+//     <!DOCTYPE html>
+// <html lang="en">
+// <head>
+//     <meta charset="UTF-8">
+//     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+//     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+//     <title>Email Verification - RentWave</title>
+//     <style>
+//         body {
+//             font-family: Arial, sans-serif;
+//             background-color: #f0f4f8;
+//             color: #333;
+//             margin: 0;
+//             padding: 0;
+//         }
+//         .container {
+//             width: 50%; /* Reduced width */
+//             max-width: 600px; /* Set max width for responsiveness */
+//             margin: 40px auto; /* Centered horizontally */
+//             padding: 20px;
+//             text-align: center;
+//             border: 1px solid #d0dbe1;
+//             border-radius: 10px;
+//             background-color: #f4f4f4;
+//             box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+//         }
+//         .header {
+//             display: flex;
+//             align-items: center;
+//             justify-content: space-between;
+//             background-color: #5F92DF;
+//             padding: 20px;
+//             color: white;
+//             border-radius: 10px 10px 0 0;
+//         }
+//         .header img {
+//             width: 120px;
+//             height: auto; /* Maintain aspect ratio */
+//         }
+//         .header h1 {
+//             margin: 0;
+//             flex-grow: 1;
+//             text-align: center;
+//             margin-right: 120px; /* To offset the logo width */
+//         }
+//         .content {
+//             padding: 20px;
+//             color: #333;
+//         }
+//         .footer {
+//             margin-top: 20px;
+//             padding: 10px;
+//             background-color: #5F92DF;
+//             color: white;
+//             border-radius: 0 0 10px 10px;
+//         }
+//     </style>
+// </head>
+// <body>
+//     <div class="container">
+//         <div class="header">
+//             <img src="https://rent-wave.vercel.app/assets/logo-D2c4he43.png" alt="RentWave Logo">
+//             <h1>Email Verification</h1>
+//         </div>
+//         <div class="content">
+//             <p>Thank you for signing up.</p>
+//             <p>To complete your registration, please verify your email address. We have sent a verification email to your inbox.</p>
+//             <p>You will be redirected to the login page in <span id="countdown">10</span> seconds.</p>
+//         </div>
+//         <div class="footer">
+//             <p>&copy; ${new Date().getFullYear()} RentWave. All rights reserved.</p>
+//         </div>
+//     </div>
+
+//     <script>
+//         let countdown = 10;
+//         const countdownElement = document.getElementById('countdown');
+//         const redirectUrl = "${redirectUrl}";
+
+//         setInterval(() => {
+//             if (countdown > 0) {
+//                 countdown--;
+//                 countdownElement.textContent = countdown;
+//             } else {
+//                 window.location.href = redirectUrl;
+//             }
+//         }, 1000);
+//     </script>
+// </body>
+// </html>
+//        `;
+
+//     // Send the HTML response to the user
+//     res.status(201).set('Content-Type', 'text/html').send(htmlTemplate);
+
+
+
+//   } catch (error) {
+//     console.error('Error during sign-up:', error);
+    
+//     // Handle duplicate key error
+//     if (error.code === 11000) {
+//       const field = Object.keys(error.keyValue)[0];
+//       const value = Object.values(error.keyValue)[0];
+//       return res.status(400).json({
+//         message: `${field.charAt(0).toUpperCase() + field.slice(1)} '${value}' already exists. Please use a different ${field}.`
+//       });
+//     }
+
+//     res.status(500).json({
+//       message: 'An unexpected error occurred. Please try again later.',
+//       error: error.message 
+//     });
+//   }
+// };
+
+
+
 exports.signUp = async (req, res) => {
   try {
     let {
@@ -147,16 +410,6 @@ exports.signUp = async (req, res) => {
       html: html(verifyLink, newUser.firstName)
     });
 
-    // res.status(201).json({
-    //   message: `Welcome ${newUser.firstName}, kindly check your email to verify your account.`,
-    //   data: {
-    //     id: newUser._id,
-    //     firstName: newUser.firstName,
-    //     lastName: newUser.lastName,
-    //     email: newUser.email,
-    //   }
-    // });
-
     // Serve the "Check your email" page with a countdown to redirect to homepage
     const redirectUrl = 'https://rent-wave.vercel.app/#/';
     const htmlTemplate = `
@@ -255,24 +508,17 @@ exports.signUp = async (req, res) => {
     // Send the HTML response to the user
     res.status(201).set('Content-Type', 'text/html').send(htmlTemplate);
 
-
-
   } catch (error) {
     console.error('Error during sign-up:', error);
     
     // Handle duplicate key error
     if (error.code === 11000) {
-      const field = Object.keys(error.keyValue)[0];
-      const value = Object.values(error.keyValue)[0];
       return res.status(400).json({
-        message: `${field.charAt(0).toUpperCase() + field.slice(1)} '${value}' already exists. Please use a different ${field}.`
+        message: 'Email or phone number already in use.'
       });
     }
 
-    res.status(500).json({
-      message: 'An unexpected error occurred. Please try again later.',
-      error: error.message 
-    });
+    res.status(500).json({ message: 'An error occurred during sign-up.' });
   }
 };
 

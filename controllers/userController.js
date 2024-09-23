@@ -156,9 +156,103 @@ exports.signUp = async (req, res) => {
     //   }
     // });
 
-    // After successful sign-up, serve the verify email page
-    res.status(201).sendFile(path.join(__dirname, '../public/verify.html'));
+    // Serve the "Check your email" page with a countdown to redirect to homepage
+    const redirectUrl = 'https://rent-wave.vercel.app/#/';
+    const htmlTemplate = `
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification - RentWave</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 40px auto;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #d0dbe1;
+            border-radius: 10px;
+            background-color: #f4f4f4;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #5F92DF;
+            padding: 20px;
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+        .header img {
+            width: 120px;
+            height: auto; /* Maintain aspect ratio */
+        }
+        .header h1 {
+            margin: 0;
+            flex-grow: 1;
+            text-align: center;
+            margin-right: 120px; /* To offset the logo width */
+        }
+        .content {
+            padding: 20px;
+            color: #333;
+        }
+        .footer {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #5F92DF;
+            color: white;
+            border-radius: 0 0 10px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://rent-wave.vercel.app/assets/logo-D2c4he43.png" alt="RentWave Logo">
+            <h1>Email Verification</h1>
+        </div>
+        <div class="content">
+            <p>Thank you for signing up.</p>
+            <p>To complete your registration, please verify your email address. We have sent a verification email to your inbox.</p>
+            <p>You will be redirected to the login page in <span id="countdown">10</span> seconds.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} RentWave. All rights reserved.</p>
+        </div>
+    </div>
 
+    <script>
+        let countdown = 10;
+        const countdownElement = document.getElementById('countdown');
+        const redirectUrl = "${redirectUrl}";
+
+        setInterval(() => {
+            if (countdown > 0) {
+                countdown--;
+                countdownElement.textContent = countdown;
+            } else {
+                window.location.href = redirectUrl;
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
+
+    `;
+
+    // Send the HTML response to the user
+    res.status(201).send(htmlTemplate);
 
 
   } catch (error) {
@@ -271,83 +365,94 @@ exports.verifyEmail = async (req, res) => {
       // Return the verification status HTML with a countdown and redirect
       const redirectUrl = 'https://rent-wave.vercel.app/#/Login';
       const htmlTemplate = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta http-equiv="X-UA-Compatible" content="IE=edge">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Email Verification - RentWave</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    background-color: #f0f4f8;
-                    color: #333;
-                    margin: 0;
-                    padding: 0;
-                }
-                .container {
-                    width: 80%;
-                    margin: 40px auto;
-                    padding: 20px;
-                    text-align: center;
-                    border: 1px solid #d0dbe1;
-                    border-radius: 10px;
-                    background-color: #f4f4f4;
-                    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-                }
-                .header {
-                    background-color: #5F92DF;
-                    padding: 20px;
-                    color: white;
-                    border-radius: 10px 10px 0 0;
-                }
-                .header h1 {
-                    margin: 0;
-                }
-                .content {
-                    padding: 20px;
-                    color: #333;
-                }
-                .footer {
-                    margin-top: 20px;
-                    padding: 10px;
-                    background-color: #5F92DF;
-                    color: white;
-                    border-radius: 0 0 10px 10px;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>Email Verification</h1>
-                </div>
-                <div class="content">
-                    <p>${message}</p>
-                    <p>You will be redirected to the login page in <span id="countdown">10</span> seconds.</p>
-                </div>
-                <div class="footer">
-                    <p>&copy; ${new Date().getFullYear()} RentWave. All rights reserved.</p>
-                </div>
-            </div>
+     <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification - RentWave</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 40px auto;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #d0dbe1;
+            border-radius: 10px;
+            background-color: #f4f4f4;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #5F92DF;
+            padding: 20px;
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+        .header img {
+            width: 120px;
+            height: auto; /* Maintain aspect ratio */
+        }
+        .header h1 {
+            margin: 0;
+            flex-grow: 1;
+            text-align: center;
+            margin-right: 120px; /* To offset the logo width */
+        }
+        .content {
+            padding: 20px;
+            color: #333;
+        }
+        .footer {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #5F92DF;
+            color: white;
+            border-radius: 0 0 10px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://rent-wave.vercel.app/assets/logo-D2c4he43.png" alt="RentWave Logo">
+            <h1>Email Verification</h1>
+        </div>
+        <div class="content">
+            <p>${message}</p>
+            <p>You will be redirected to the login page in <span id="countdown">10</span> seconds.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} RentWave. All rights reserved.</p>
+        </div>
+    </div>
 
-            <script>
-                let countdown = 10;
-                const countdownElement = document.getElementById('countdown');
-                const redirectUrl = "${redirectUrl}";
+    <script>
+        let countdown = 10;
+        const countdownElement = document.getElementById('countdown');
+        const redirectUrl = "${redirectUrl}";
 
-                setInterval(() => {
-                    if (countdown > 0) {
-                        countdown--;
-                        countdownElement.textContent = countdown;
-                    } else {
-                        window.location.href = redirectUrl;
-                    }
-                }, 1000);
-            </script>
-        </body>
-        </html>
+        setInterval(() => {
+            if (countdown > 0) {
+                countdown--;
+                countdownElement.textContent = countdown;
+            } else {
+                window.location.href = redirectUrl;
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
       `;
 
       res.status(200).send(htmlTemplate);

@@ -12,14 +12,10 @@
             color: #333;
             margin: 0;
             padding: 0;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         .container {
             width: 80%;
-            max-width: 600px;
+            margin: 40px auto;
             padding: 20px;
             text-align: center;
             border: 1px solid #d0dbe1;
@@ -41,11 +37,10 @@
             height: auto; /* Maintain aspect ratio */
         }
         .header h1 {
-            flex-grow: 1;
             margin: 0;
-            font-size: 24px;
-            text-align: center; /* Center title */
-            margin-right: 120px; /* Offset to account for the logo width */
+            flex-grow: 1;
+            text-align: center;
+            margin-right: 120px; /* To offset the logo width */
         }
         .content {
             padding: 20px;
@@ -67,8 +62,9 @@
             <h1>Email Verification</h1>
         </div>
         <div class="content">
-            <p>Thank you for signing up! Please check your email for the verification link to complete your registration.</p>
-            <p>You will be redirected to the home page in <span id="countdown">10</span> seconds.</p>
+            <p>Thank you for signing up.</p>
+            <p>To complete your registration, please verify your email address. We have sent a verification email to your inbox.</p>
+            <p>You will be redirected to the login page in <span id="countdown">10</span> seconds.</p>
         </div>
         <div class="footer">
             <p>&copy; ${new Date().getFullYear()} RentWave. All rights reserved.</p>
@@ -78,7 +74,7 @@
     <script>
         let countdown = 10;
         const countdownElement = document.getElementById('countdown');
-        const redirectUrl = "https://rent-wave.vercel.app/";  
+        const redirectUrl = "${redirectUrl}";
 
         setInterval(() => {
             if (countdown > 0) {

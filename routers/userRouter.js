@@ -17,7 +17,8 @@ const {
     getAllMaintenanceRequestsForLandlord,
     getTenantById,
     getAllTenants,
-    getAllTenantPayments
+    getAllTenantPayments,
+    getTenantsForLandlord
 } = require("../controllers/userController");
 
 const {userValidator}= require("../middlewares/userValidator");
@@ -68,6 +69,10 @@ userRouter.get('/tenant/:tenantId',authenticator,getTenantById);
 
 
 userRouter.get('/tenants',authenticator,getAllTenants);
+
+// Route to get all tenants for the authenticated landlord
+userRouter.get('/landlord/tenants', authenticator, getTenantsForLandlord);
+
 
 
 // get all payments of landlord tenants

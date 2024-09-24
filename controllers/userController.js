@@ -1414,3 +1414,31 @@ exports.getAllTenants = async (req, res) => {
 
 
 
+
+// Function to get all tenants for the authenticated landlord
+exports.getTenantsForLandlord = async (req, res) => {
+    try {
+        // Retrieve the landlord ID from req.user
+        const landlordId = req.user.id;
+
+        // Find all tenants associated with the landlord
+        const tenants = await tenantModel.find({ listedBy: landlordId });
+
+        // Check if tenants are found
+        if (!tenants.length) {
+            return res.status(404).json({ message: 'No tenants found for this landlord.' });
+        }
+
+        // Respond with the list of tenants
+        res.status(200).json(tenants);
+    } catch (error) {
+        console.error('Error fetching tenants:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+
+
+
+
+
+

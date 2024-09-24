@@ -629,7 +629,8 @@ exports.verifyEmail = async (req, res) => {
             padding: 0;
         }
         .container {
-            width: 80%;
+            max-width: 800px; /* Maximum width for larger screens */
+            width: 90%; /* Flexible width for responsiveness */
             margin: 40px auto;
             padding: 20px;
             text-align: center;
@@ -667,6 +668,19 @@ exports.verifyEmail = async (req, res) => {
             background-color: #5F92DF;
             color: white;
             border-radius: 0 0 10px 10px;
+        }
+
+        /* Media query for mobile responsiveness */
+        @media (max-width: 600px) {
+            .container {
+                width: 95%; /* Reduce width for smaller screens */
+                margin: 20px auto;
+                padding: 15px;
+            }
+            .header h1 {
+                font-size: 1.5rem; /* Adjust font size for mobile */
+                margin-right: 10px; /* Reduce offset for mobile */
+            }
         }
     </style>
 </head>

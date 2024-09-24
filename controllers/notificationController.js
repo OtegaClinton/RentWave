@@ -37,7 +37,8 @@ const notifyDueRent = async () => {
             padding: 0;
         }
         .container {
-            width: 80%;
+            max-width: 800px; /* Maximum width for large screens */
+            width: 100%; /* Flexible width for responsiveness */
             margin: 20px auto;
             padding: 20px;
             border: 1px solid #d0dbe1;
@@ -75,6 +76,24 @@ const notifyDueRent = async () => {
             font-size: 0.9em;
             color: #f4f4f4;
             border-radius: 0 0 10px 10px; /* Rounded bottom corners */
+        }
+
+        /* Media query for mobile responsiveness */
+        @media (max-width: 600px) {
+            .container {
+                width: 90%; /* Reduce width for smaller screens */
+                margin: 10px auto;
+                padding: 10px; /* Reduce padding for mobile */
+            }
+            .header, .footer {
+                padding: 10px;
+            }
+            .header h1 {
+                font-size: 1.5rem; /* Reduce font size for the header */
+            }
+            .content {
+                padding: 15px;
+            }
         }
     </style>
 </head>
@@ -183,7 +202,8 @@ const dueRentReminder = async () => {
             padding: 0;
         }
         .container {
-            width: 80%;
+            max-width: 800px; /* Maximum width for larger screens */
+            width: 100%; /* Flexible width for responsiveness */
             margin: 20px auto;
             padding: 20px;
             border: 1px solid #d0dbe1;
@@ -221,6 +241,24 @@ const dueRentReminder = async () => {
             font-size: 0.9em;
             color: #f4f4f4;
             border-radius: 0 0 10px 10px; /* Rounded bottom corners */
+        }
+
+        /* Media query for mobile responsiveness */
+        @media (max-width: 600px) {
+            .container {
+                width: 90%; /* Reduce width for smaller screens */
+                margin: 10px auto;
+                padding: 10px; /* Reduce padding for mobile */
+            }
+            .header, .footer {
+                padding: 10px;
+            }
+            .header h1 {
+                font-size: 1.5rem; /* Reduce font size for the header */
+            }
+            .content {
+                padding: 15px;
+            }
         }
     </style>
 </head>
@@ -304,7 +342,8 @@ const generateAndSendInvoicesForToday = async () => {
             padding: 0;
         }
         .container {
-            width: 80%;
+            max-width: 800px; /* Maximum width for larger screens */
+            width: 100%; /* Flexible width for responsiveness */
             margin: 20px auto;
             padding: 20px;
             border: 1px solid #d0dbe1;
@@ -342,6 +381,27 @@ const generateAndSendInvoicesForToday = async () => {
             font-size: 0.9em;
             color: #f4f4f4;
             border-radius: 0 0 10px 10px; /* Rounded bottom corners */
+        }
+
+        /* Media query for mobile responsiveness */
+        @media (max-width: 600px) {
+            .container {
+                width: 90%; /* Reduce width for smaller screens */
+                margin: 10px auto;
+                padding: 10px; /* Reduce padding for mobile */
+            }
+            .header, .footer {
+                padding: 10px;
+            }
+            .header h1 {
+                font-size: 1.5rem; /* Reduce font size for the header */
+            }
+            .content {
+                padding: 15px;
+            }
+            ul {
+                padding-left: 20px; /* Ensure proper indentation for list items on small screens */
+            }
         }
     </style>
 </head>

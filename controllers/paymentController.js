@@ -209,7 +209,8 @@ const payRent = async (req, res) => {
             padding: 0;
         }
         .container {
-            width: 80%;
+            max-width: 800px; /* Maximum width for larger screens */
+            width: 100%; /* Flexible width for responsiveness */
             margin: 20px auto;
             padding: 20px;
             border: 1px solid #d0dbe1;
@@ -248,6 +249,24 @@ const payRent = async (req, res) => {
             color: #f4f4f4;
             border-radius: 0 0 10px 10px;
         }
+
+        /* Media query for mobile responsiveness */
+        @media (max-width: 600px) {
+            .container {
+                width: 90%; /* Reduce width for smaller screens */
+                margin: 10px auto;
+                padding: 10px; /* Reduce padding for mobile */
+            }
+            .header, .footer {
+                padding: 10px;
+            }
+            .header h1 {
+                font-size: 1.5rem; /* Reduce font size for the header */
+            }
+            .content {
+                padding: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -269,7 +288,8 @@ const payRent = async (req, res) => {
         </div>
     </div>
 </body>
-</html>`;
+</html>
+`;
 
     console.log('Sending email to:', tenant.email);
 

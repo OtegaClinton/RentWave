@@ -156,53 +156,54 @@ exports.onboardTenant = async (req, res) => {
             font-family: Arial, sans-serif;
             line-height: 1.6;
             color: #333333;
-            background-color: #f0f4f8; /* Light background for contrast */
+            background-color: #f0f4f8;
             margin: 0;
             padding: 0;
         }
         .container {
-            width: 80%;
+            max-width: 800px; /* Maximum width for larger screens */
+            width: 100%; /* Flexible width for responsiveness */
             margin: 20px auto;
             padding: 20px;
             border: 1px solid #d0dbe1;
             border-radius: 10px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-            background-color: #ffff; /* Clean white background */
+            background-color: #ffffff;
         }
         .header {
-            background: #5F92DF; /* Royal Blue */
+            background: #5F92DF;
             padding: 15px;
             display: flex;
-            align-items: center; /* Align items vertically */
-            justify-content: center; /* Center content horizontally */
-            position: relative; /* Allows positioning of the logo */
-            border-bottom: 2px solid #5F92DF; /* Darker shade of Royal Blue */
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-bottom: 2px solid #5F92DF;
             color: #f4f4f4;
-            border-radius: 10px 10px 0 0; /* Rounded top corners */
+            border-radius: 10px 10px 0 0;
         }
         .header img {
             width: 120px;
             height: 100px;
             object-fit: contain;
             position: absolute;
-            left: 15px; /* Position logo on the left */
+            left: 15px;
         }
         .content {
             padding: 20px;
             color: #333333;
         }
         .footer {
-            background: #5F92DF; /* Darker shade of Royal Blue */
+            background: #5F92DF;
             padding: 15px;
             text-align: center;
-            border-top: 2px solid #5F92DF; /* Royal Blue */
+            border-top: 2px solid #5F92DF;
             font-size: 0.9em;
             color: #f4f4f4;
-            border-radius: 0 0 10px 10px; /* Rounded bottom corners */
+            border-radius: 0 0 10px 10px;
         }
         .button {
             display: inline-block;
-            background-color: #5F92DF; /* Royal Blue */
+            background-color: #5F92DF;
             color: #f4f4f4;
             padding: 12px 24px;
             text-decoration: none;
@@ -211,7 +212,28 @@ exports.onboardTenant = async (req, res) => {
             transition: background-color 0.3s ease;
         }
         .button:hover {
-            background-color: #002a80; /* Darker shade of Royal Blue */
+            background-color: #002a80;
+        }
+
+        /* Media query for mobile responsiveness */
+        @media (max-width: 600px) {
+            .container {
+                width: 90%; /* Reduce width for smaller screens */
+                margin: 10px auto;
+                padding: 10px;
+            }
+            .header, .footer {
+                padding: 10px;
+            }
+            .header h1 {
+                font-size: 1.5rem; /* Adjust font size for mobile */
+            }
+            .content {
+                padding: 15px;
+            }
+            .button {
+                padding: 10px 20px; /* Adjust button padding for smaller screens */
+            }
         }
     </style>
 </head>
@@ -833,13 +855,14 @@ exports.createMaintenanceRequest = async (req, res) => {
             padding: 0;
         }
         .container {
-            width: 80%;
+            max-width: 800px; /* Maximum width for larger screens */
+            width: 100%; /* Flexible width for responsiveness */
             margin: 20px auto;
             padding: 20px;
             border: 1px solid #d0dbe1;
             border-radius: 10px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-            background-color: #ffff;
+            background-color: #ffffff;
         }
         .header {
             background: #5F92DF;
@@ -871,6 +894,24 @@ exports.createMaintenanceRequest = async (req, res) => {
             font-size: 0.9em;
             color: #f4f4f4;
             border-radius: 0 0 10px 10px;
+        }
+
+        /* Media query for mobile responsiveness */
+        @media (max-width: 600px) {
+            .container {
+                width: 90%; /* Reduce width for smaller screens */
+                margin: 10px auto;
+                padding: 10px;
+            }
+            .header, .footer {
+                padding: 10px;
+            }
+            .header h1 {
+                font-size: 1.5rem; /* Adjust font size for mobile */
+            }
+            .content {
+                padding: 15px;
+            }
         }
     </style>
 </head>

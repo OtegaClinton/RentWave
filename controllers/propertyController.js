@@ -323,7 +323,7 @@ exports.createProperty = async (req, res) => {
   exports.getAllProperties = async (req, res) => {
     try {
       // Find all properties and populate the listedBy field
-      const properties = await propertyModel.find().populate('listedBy');
+      const properties = await propertyModel.find().sort({ createdAt: -1 }).populate('listedBy');
       
       // If no properties are found, send a 404 response
       if (properties.length === 0) {
@@ -541,7 +541,7 @@ exports.getAllPropertiesByLandlord = async (req, res) => {
     }
 
     // Find all properties where the landlord matches the logged-in user
-    const properties = await propertyModel.find({ listedBy: landlordId });
+    const properties = await propertyModel.find({ listedBy: landlordId }).sort({ createdAt: -1 });
 
     if (!properties || properties.length === 0) {
       return res.status(404).json({ message: 'No properties found for this landlord.' });

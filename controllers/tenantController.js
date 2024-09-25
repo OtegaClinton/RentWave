@@ -987,7 +987,7 @@ exports.getAllSingleTenantMaintenanceRequests = async (req, res) => {
     }
 
     // Find all maintenance requests for the logged-in tenant
-    const maintenanceRequests = await maintenanceModel.find({ tenant: tenantId });
+    const maintenanceRequests = await maintenanceModel.find({ tenant: tenantId }).sort({ createdAt: -1 });
 
     if (maintenanceRequests.length === 0) {
       return res.status(404).json({ message: 'No maintenance requests found for this tenant.' });
@@ -1021,7 +1021,7 @@ exports.getTenantPayments = async (req, res) => {
     const objectId = new mongoose.Types.ObjectId(tenantId);
 
     // Find all payments for the logged-in tenant
-    const payments = await paymentModel.find({ tenant: objectId });
+    const payments = await paymentModel.find({ tenant: objectId }).sort({ createdAt: -1 });
 
     if (!payments || payments.length === 0) {
       return res.status(404).json({ message: 'No payments found for this tenant.' });

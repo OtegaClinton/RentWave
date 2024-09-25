@@ -1101,7 +1101,7 @@ exports.getAllUsers = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Fetch users with pagination
-    const users = await userModel.find().skip(skip).limit(limit);
+    const users = await userModel.find().sort({ createdAt: -1 }).skip(skip).limit(limit);
 
     if (users.length === 0) {
       return res.status(404).json({
@@ -1247,7 +1247,7 @@ exports.getMaintenanceRequestsForTenant = async (req, res) => {
         }
 
         // Find all maintenance requests associated with this tenant
-        const maintenanceRequests = await maintenanceModel.find({ tenant: tenantId });
+        const maintenanceRequests = await maintenanceModel.find({ tenant: tenantId }).sort({ createdAt: -1 });
 
         // Respond with the maintenance requests
         res.status(200).json({
@@ -1281,7 +1281,7 @@ exports.getAllMaintenanceRequestsForLandlord = async (req, res) => {
         const tenantIds = tenants.map(tenant => tenant._id);
 
         // Find all maintenance requests associated with these tenants
-        const maintenanceRequests = await maintenanceModel.find({ tenant: { $in: tenantIds } });
+        const maintenanceRequests = await maintenanceModel.find({ tenant: { $in: tenantIds } }).sort({ createdAt: -1 });
 
         // Respond with the maintenance requests
         res.status(200).json({
@@ -1337,7 +1337,7 @@ exports.getAllTenants = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Fetch tenants with pagination
-    const tenants = await tenantModel.find().skip(skip).limit(limit);
+    const tenants = await tenantModel.find().sort({ createdAt: -1 }).skip(skip).limit(limit);
 
     if (tenants.length === 0) {
       return res.status(404).json({
@@ -1378,7 +1378,7 @@ exports.getAllTenants = async (req, res) => {
     const landlordId = req.user.id; // Get the landlord ID from the token
 
     // Step 1: Find properties owned by the landlord
-    const properties = await propertyModel.find({ listedBy: landlordId });
+    const properties = await propertyModel.find({ listedBy: landlordId }).sort({ createdAt: -1 });
 
     if (!properties || properties.length === 0) {
       return res.status(404).json({ message: 'No properties found for this landlord' });
@@ -1422,7 +1422,7 @@ exports.getTenantsForLandlord = async (req, res) => {
         const landlordId = req.user.id;
 
         // Find all tenants associated with the landlord
-        const tenants = await tenantModel.find({ listedBy: landlordId });
+        const tenants = await tenantModel.find({ listedBy: landlordId }).sort({ createdAt: -1 });
 
         // Check if tenants are found
         if (!tenants.length) {
